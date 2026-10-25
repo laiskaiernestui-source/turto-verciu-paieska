@@ -135,7 +135,10 @@ td.adr{white-space:normal;min-width:140px}
       <div class="check" style="margin-bottom:0"><input type="checkbox" id="st_pa" checked><label for="st_pa" style="margin:0">Užbaigtas</label></div>
     </div>
     <div class="check"><input type="checkbox" id="vert"><label for="vert" style="margin:0"><b>Turto vertinimai</b></label></div>
-    <div class="check" style="margin:-4px 0 6px 22px"><input type="checkbox" id="tikmano"><label for="tikmano" style="margin:0">Tik mano vertinimai</label></div>
+    <div style="margin:-4px 0 10px 22px">
+      <div class="check" style="margin-bottom:6px"><input type="checkbox" id="kiti" checked><label for="kiti" style="margin:0">Vertinimai</label></div>
+      <div class="check" style="margin-bottom:0"><input type="checkbox" id="tikmano" checked><label for="tikmano" style="margin:0">Mano vertinimai</label></div>
+    </div>
     <div class="check"><input type="checkbox" id="skl" checked><label for="skl" style="margin:0"><b>Sklypai ir projektai</b></label></div>
     <div style="margin:0 0 14px 22px">
       <div class="check" style="margin-bottom:6px"><input type="checkbox" id="sk_pas" checked><label for="sk_pas" style="margin:0">Pasiūlymas</label></div>
@@ -427,16 +430,17 @@ td.adr{white-space:normal;min-width:140px}
     if(!$('vert').checked){ render(); return; }
     for(const o of D){
       if(o.lat==null) continue;
-      if(tipas&&o.t!==tipas) continue;
-      if($('pog').value&&o.pog!==$('pog').value) continue;
+      if(o.mano?!$('tikmano').checked:!$('kiti').checked) continue;
       if(vaid&&o.v!==vaid) continue;
-      if($('tikmano').checked&&!o.mano) continue;
       if(!nuoma&&(o.vr==='nuoma'||o.vr==='nuomos')) continue;
       if(tik&&!(o.geo==='adresas'||o.geo==='gatve')) continue;
-      if(o.d&&o.d<minD&&!$('tikmano').checked) continue;
       if(!isNaN(pl1)&&(o.pl==null||o.pl<pl1)) continue;
       if(!isNaN(pl2)&&(o.pl==null||o.pl>pl2)) continue;
-      if(o.sm==null){ if(!smDef) continue; } else if(o.sm<sm1||o.sm>sm2) continue;
+      if(!o.mano){ // mano vertinimams tipo / laikotarpio / statybos metų filtrai netaikomi – jie rodomi visada
+        if(tipas&&o.t!==tipas) continue;
+        if($('pog').value&&o.pog!==$('pog').value) continue;
+        if(o.d&&o.d<minD) continue;
+        if(o.sm==null){ if(!smDef) continue; } else if(o.sm<sm1||o.sm>sm2) continue; }
       if(!bnds.contains([o.lat,o.lon])) continue;
       res.push(o);
     }
@@ -469,7 +473,7 @@ td.adr{white-space:normal;min-width:140px}
       L.circleMarker([o.lat,o.lon],{radius:7,color:'#fff',weight:1.5,fillColor:col,fillOpacity:.95,bubblingMouseEvents:false,pane:'res'}).bindPopup(popup(o),{maxWidth:320}).addTo(resLayer); }
   };
   $('go').addEventListener('click',run);
-  ['tipas','pog','men','vaid','pl1','pl2','sm1','sm2','tik','nuoma','vyst','vert','tikkain','st_pl','st_st','st_pa','tikmano'].forEach(id=>$(id).addEventListener('change',run));
+  ['tipas','pog','men','vaid','pl1','pl2','sm1','sm2','tik','nuoma','vyst','vert','tikkain','st_pl','st_st','st_pa','tikmano','kiti'].forEach(id=>$(id).addEventListener('change',run));
   let mvT=null; map.on('moveend',()=>{ clearTimeout(mvT); mvT=setTimeout(run,250); });
 
   // ---- pogrupiai pagal tipą
