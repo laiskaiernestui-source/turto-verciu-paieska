@@ -46,6 +46,7 @@ button.ghost{padding:5px 9px;border:1px solid var(--line);border-radius:6px;back
 .sugg li:hover,.sugg li.active{background:var(--accent-soft)}
 .sugg li small{display:block;color:var(--muted);font-size:11px}
 .center{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;word-break:break-word}
+[hidden]{display:none!important}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 .tile .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
@@ -90,8 +91,8 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
 <section id="view-paieska">
 <div class="layout">
   <aside class="panel controls">
-    <div class="check"><input type="checkbox" id="vyst"><label for="vyst" style="margin:0"><b>Vystytojų skelbimai</b> <small style="color:var(--muted)">(naujos statybos, pardavimo kainos)</small></label></div>
-    <div class="check" style="margin-bottom:14px"><input type="checkbox" id="vert" checked><label for="vert" style="margin:0"><b>Turto vertinimai</b> <small style="color:var(--muted)">(vertinimai ir sandoriai)</small></label></div>
+    <div class="check"><input type="checkbox" id="vyst" checked><label for="vyst" style="margin:0"><b>Vystytojų skelbimai</b> <small style="color:var(--muted)">(naujos statybos, pardavimo kainos)</small></label></div>
+    <div class="check" style="margin-bottom:14px"><input type="checkbox" id="vert"><label for="vert" style="margin:0"><b>Turto vertinimai</b> <small style="color:var(--muted)">(vertinimai ir sandoriai)</small></label></div>
     <h2>Rasti adresą žemėlapyje</h2>
     <div class="field sugg">
       <label for="q">Adresas (bet koks LT adresas) arba „platuma, ilguma“</label>
@@ -124,7 +125,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
 
   <div class="results">
     <div class="tiles" id="tiles2" hidden></div>
-    <div class="tiles" id="tiles"></div>
+    <div class="tiles" id="tiles" hidden></div>
     <div class="split">
       <div class="panel" style="padding:8px">
         <div id="map" style="height:520px;border-radius:6px;z-index:0"></div>
@@ -366,6 +367,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const _draw=draw; draw=function(){ _draw(); drawVyst(); };
   $('vyst').addEventListener('change',drawVyst);
   $('vert').addEventListener('change',()=>{ $('tiles').hidden=!$('vert').checked; if($('vert').checked) allLayer.addTo(map); else map.removeLayer(allLayer); });
+  $('vert').dispatchEvent(new Event('change'));
 
   // ---- savivaldybių suvestinė
   function renderSav(){
