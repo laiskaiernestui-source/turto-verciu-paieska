@@ -109,8 +109,10 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
         <select id="vaid"><option value="">Visi</option><option value="palyginamasis">Tik sandoriai</option><option value="vertinamas">Tik vertinimai</option></select></div>
     </div>
     <div class="row2">
-      <div class="field"><label for="pl">Plotas (m² / ha)</label><input type="number" id="pl" placeholder="nebūtina" step="any"></div>
-      <div class="field"><label for="tol">± dalis</label><input type="number" id="tol" value="0.3" min="0" max="1" step="0.1"></div>
+      <div class="field"><label for="pl1">Plotas nuo (m² / ha)</label><input type="number" id="pl1" placeholder="nuo" step="any" min="0"></div>
+      <div class="field"><label for="pl2">Plotas iki (m² / ha)</label><input type="number" id="pl2" placeholder="iki" step="any" min="0"></div>
+      <div class="field"><label for="sm1">Statybos metai nuo</label><input type="number" id="sm1" value="1890" min="1500" step="1"></div>
+      <div class="field"><label for="sm2">Statybos metai iki</label><input type="number" id="sm2" value="" min="1500" step="1"></div>
     </div>
     <div class="check"><input type="checkbox" id="tik" checked><label for="tik" style="margin:0">Tik tikslios koordinatės (adresas/gatvė)</label></div>
     <div class="check"><input type="checkbox" id="nuoma"><label for="nuoma" style="margin:0">Įtraukti nuomos įrašus</label></div>
@@ -151,6 +153,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
 (async function(){
   const $=id=>document.getElementById(id);
   const fmt=(n,d=0)=>n==null?'–':Number(n).toLocaleString('lt-LT',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const DEFSM2=new Date().getFullYear()+3; $('sm2').value=DEFSM2;
   const fdate=o=>!o.d?'–':(o.v==='vertinamas'?o.d:o.d.slice(0,7));
   const TIPAI={butas:'butas',zemes_sklypas:'sklypas',pastatas:'pastatas',patalpos:'patalpos',kompleksas:'kompleksas',kita:'kita',inzineriniai:'inžin.'};
   const SB='https://zbgugliqnjohqbotssgl.supabase.co', KEY='sb_publishable_PpoYli-Lf-OiTJkJVTP15A_fzR58I3D';
@@ -233,7 +236,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   function run(){
     if(!center){ $('tablewrap').innerHTML='<div class="empty">Pasirinkite centrą: įveskite adresą iš bazės arba koordinates.</div>'; return; }
     const tipas=$('tipas').value, r=parseFloat($('r').value)*1000||3000, men=parseInt($('men').value)||24, vaid=$('vaid').value;
-    const pl=parseFloat($('pl').value), tol=parseFloat($('tol').value)||0.3, tik=$('tik').checked, nuoma=$('nuoma').checked;
+    const pl1=parseFloat($('pl1').value), pl2=parseFloat($('pl2').value), sm1=parseInt($('sm1').value)||1890, sm2=parseInt($('sm2').value)||DEFSM2, smDef=(sm1<=1890&&sm2>=DEFSM2), tik=$('tik').checked, nuoma=$('nuoma').checked;
     const minDate=new Date(); minDate.setMonth(minDate.getMonth()-men); const minD=minDate.toISOString().slice(0,10);
     res=[];
     for(const o of D){
@@ -244,7 +247,9 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
       if(!nuoma&&(o.vr==='nuoma'||o.vr==='nuomos')) continue;
       if(tik&&!(o.geo==='adresas'||o.geo==='gatve')) continue;
       if(o.d&&o.d<minD) continue;
-      if(pl&&o.pl&&(o.pl<pl*(1-tol)||o.pl>pl*(1+tol))) continue;
+      if(!isNaN(pl1)&&(o.pl==null||o.pl<pl1)) continue;
+      if(!isNaN(pl2)&&(o.pl==null||o.pl>pl2)) continue;
+      if(o.sm==null){ if(!smDef) continue; } else if(o.sm<sm1||o.sm>sm2) continue;
       const dd=dist(center.lat,center.lon,o.lat,o.lon); if(dd>r) continue;
       res.push(Object.assign({dist:dd},o));
     }
@@ -276,7 +281,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     if(circle&&center) circle.setRadius(parseFloat($('r').value)*1000||3000);
   };
   $('go').addEventListener('click',run);
-  ['tipas','pog','r','men','vaid','pl','tol','tik','nuoma','vyst'].forEach(id=>$(id).addEventListener('change',()=>center&&run()));
+  ['tipas','pog','r','men','vaid','pl1','pl2','sm1','sm2','tik','nuoma','vyst'].forEach(id=>$(id).addEventListener('change',()=>center&&run()));
 
   // ---- pogrupiai pagal tipą
   const POG=(()=>{const m={}; for(const o of D){ if(!o.pog) continue; (m[o.t]=m[o.t]||new Set()).add(o.pog); } return m;})();
