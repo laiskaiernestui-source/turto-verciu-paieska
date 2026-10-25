@@ -223,7 +223,8 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const lbl=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CARTO',opacity:.9});
   const map=L.map('map',{layers:[osm]}).setView([54.8972,23.9120],13);
   map.createPane('res'); map.getPane('res').style.zIndex=650;
-  L.control.layers({'Kartografinis':osm,'Palydovinis':L.layerGroup([sat,lbl])},{},{collapsed:false}).addTo(map);
+  const gsat=L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:'0123',attribution:'Imagery © Google'});
+  L.control.layers({'Kartografinis':osm,'Palydovinis':L.layerGroup([gsat,lbl]),'Palydovinis (Esri)':L.layerGroup([sat,lbl])},{},{collapsed:false}).addTo(map);
   L.control.scale({imperial:false}).addTo(map);
   const allLayer=L.layerGroup().addTo(map), resLayer=L.layerGroup().addTo(map); let centerMarker=null;
   const popup=o=>`<div style="min-width:220px"><b style="font-size:13px">${o.adr||'Adresas nuasmenintas'}</b>
