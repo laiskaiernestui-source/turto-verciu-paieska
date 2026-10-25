@@ -493,6 +493,6 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
 
 
   // pradinė būsena: Kaunas taip, kad tilptų visi Realia projektai (jei jų nėra – centras)
-  { const rp=S.filter(x=>x.realia&&x.lat!=null); if(rp.length){ const b=L.latLngBounds(rp.map(x=>[x.lat,x.lon])); b.extend([54.8972,23.9120]); map.fitBounds(b,{padding:[40,40],maxZoom:13}); } else map.setView([54.8972,23.9120],13); } run();
+  { const rp=S.filter(x=>x.realia&&x.lat!=null); const fit=()=>{ map.invalidateSize(); if(rp.length){ const b=L.latLngBounds(rp.map(x=>[x.lat,x.lon])); b.extend([54.8972,23.9120]); map.fitBounds(b,{padding:[30,30],maxZoom:13}); } else map.setView([54.8972,23.9120],13); }; fit(); setTimeout(fit,400); } run();
 })();
 </script></body></html>
