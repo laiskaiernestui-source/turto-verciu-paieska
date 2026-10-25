@@ -58,11 +58,11 @@ button.ghost{padding:5px 9px;border:1px solid var(--line);border-radius:6px;back
 .lmark{background:transparent;border:0}
 .tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px}
 table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
-th,td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.tablewrap th,.tablewrap td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 td.num,th.num{text-align:right;font-family:var(--mono);font-size:12px}
 th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel)}
 th.sorted{color:var(--accent)}
-tr:hover td{background:var(--accent-soft)}
+.tablewrap tr:hover td{background:var(--accent-soft)}
 td.adr{white-space:normal;min-width:220px;max-width:360px}
 .pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;border:1px solid var(--line);color:var(--muted)}
 .pill.subj{border-color:var(--accent);color:var(--accent)}
@@ -178,13 +178,13 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const allLayer=L.layerGroup().addTo(map), resLayer=L.layerGroup().addTo(map); let centerMarker=null, circle=null;
   const popup=o=>`<div style="min-width:220px"><b style="font-size:13px">${o.adr||'Adresas nuasmenintas'}</b>
     <table style="margin-top:6px;font-size:12px;border-collapse:collapse">
-    <tr><td style="color:#777;padding-right:10px">Tipas</td><td>${TIPAI[o.t]||o.t||'–'} · ${o.v==='vertinamas'?'vertinimas':'sandoris'}${o.pask?' · '+o.pask:''}</td></tr>
-    <tr><td style="color:#777">Plotas</td><td>${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv==='ha'?'ha':'m²'):'–'}${o.sm?' · statyta '+o.sm:''}</td></tr>
-    <tr><td style="color:#777">${o.v==='vertinamas'?'Vertė':'Kaina'}</td><td><b>${o.k!=null?fmt(o.k)+' €':'–'}</b>${o.vr==='nuoma'||o.vr==='nuomos'?' /mėn.':''}</td></tr>
-    <tr><td style="color:#777">Vnt. kaina</td><td><b>${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' '+(o.vnt||''):'–'}</b></td></tr>
-    <tr><td style="color:#777">Data</td><td>${o.d?o.d.slice(0,7):'–'}</td></tr>
-    <tr><td style="color:#777">Šaltinis</td><td>${o.nr||''}<br><span style="color:#777">${o.vert||''}</span></td></tr>
-    <tr><td style="color:#777">Tikslumas</td><td>${(o.geo||'–').replace('!',' (abejotina)')}</td></tr></table></div>`;
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Tipas</td><td>${TIPAI[o.t]||o.t||'–'} · ${o.v==='vertinamas'?'vertinimas':'sandoris'}${o.pask?' · '+o.pask:''}</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Plotas</td><td>${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv==='ha'?'ha':'m²'):'–'}${o.sm?' · statyta '+o.sm:''}</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">${o.v==='vertinamas'?'Vertė':'Kaina'}</td><td><b>${o.k!=null?fmt(o.k)+' €':'–'}</b>${o.vr==='nuoma'||o.vr==='nuomos'?' /mėn.':''}</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Vnt. kaina</td><td><b>${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' '+(o.vnt||''):'–'}</b></td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Data</td><td>${o.d?o.d.slice(0,7):'–'}</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Šaltinis</td><td>${o.nr||''}<br><span style="color:#777">${o.vert||''}</span></td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Tikslumas</td><td>${(o.geo||'–').replace('!',' (abejotina)')}</td></tr></table></div>`;
   for(const o of D){ if(o.lat==null) continue; L.circleMarker([o.lat,o.lon],{radius:4.5,color:'#666',weight:1,fillColor:'#aaa',fillOpacity:.7,bubblingMouseEvents:false}).bindPopup(popup(o),{maxWidth:320}).addTo(allLayer); }
   map.on('click',e=>{ setCenter(e.latlng.lat,e.latlng.lng,'pažymėta žemėlapyje'); $('q').value=`${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`; run(); });
 
