@@ -160,7 +160,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const TIPAI={butas:'butas',zemes_sklypas:'sklypas',pastatas:'pastatas',patalpos:'patalpos',kompleksas:'kompleksas',kita:'kita',inzineriniai:'inžin.'};
   const SB='https://zbgugliqnjohqbotssgl.supabase.co', KEY='sb_publishable_PpoYli-Lf-OiTJkJVTP15A_fzR58I3D';
   const HDR={apikey:KEY,authorization:'Bearer '+KEY};
-  let D=[], S=[];
+  let D=[], S=[]; const PAV={};
 
   // ---- savininko prisijungimas (Supabase Auth, el. pašto nuoroda) ir trynimas
   const AK='tv_auth'; let AUTH=null;
@@ -200,6 +200,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     }
     D=D.map(o=>{const a=A.get(o.ataskaita_id)||{}; return {id:o.id,aid:o.ataskaita_id,v:o.vaidmuo,t:o.tipas,adr:o.adresas,sav:o.savivaldybe,d:o.data,k:o.kaina!=null?+o.kaina:null,vk:o.vnt_kaina!=null?+o.vnt_kaina:null,vnt:o.vnt,pl:o.plotas!=null?+o.plotas:null,plv:o.plotas_vnt,sm:o.statybos_metai,pask:o.paskirtis,vr:o.vertes_rusis,geo:(o.geokodavimas||'').replace(';abejotina>60km','!')||null,lat:o.lat,lon:o.lon,nr:a.ataskaitos_nr,vert:a.vertintojo_imone,f:a.saltinis_failas,pog:o.pogrupis};});
     try{ for(let off=0;;off+=1000){ const rs=await fetch(`${SB}/rest/v1/skelbimai?select=*&order=id&offset=${off}&limit=1000`,{headers:HDR}); const pg=await rs.json(); if(!Array.isArray(pg)) break; S.push(...pg); if(pg.length<1000) break; } }catch(e){}
+    try{ const rp=await (await fetch(`${SB}/rest/v1/projektu_pav?select=projektas,pav`,{headers:HDR})).json(); if(Array.isArray(rp)) rp.forEach(r=>PAV[r.projektas]=r.pav); }catch(e){}
     const nGeo=D.filter(o=>o.lat!=null).length;
     $('meta').textContent=`${fmt(D.length)} objektai iš ${fmt(A.size)} vertinimo ataskaitų · ${fmt(nGeo)} su koordinatėmis · gyvi duomenys iš Supabase`;
   }catch(e){ $('meta').textContent='Nepavyko užkrauti duomenų: '+e.message; return; }
@@ -335,7 +336,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const rng=(a,b,d=0)=>a==null?'–':(a===b?fmt(a,d):fmt(a,d)+' – '+fmt(b,d));
   const stCol=st=>/parduot/i.test(st||'')?'#999':/rezerv/i.test(st||'')?'#c47a00':'#1a7f37';
   const unitsTbl=(p,mw)=>{ if(!p.units.length) return `<div style="font-size:12px;color:#777">Atskirų butų šaltinis nepateikia${p.stage?' (būklė: '+p.stage+')':''}.${p.url?` <a href="${p.url}" target="_blank" rel="noopener">Projekto puslapis</a>`:''}</div>`; const it=[...p.units].sort((a,b)=>(a.aukstas||0)-(b.aukstas||0)||(+a.plotas||0)-(+b.plotas||0)); return `<div style="max-height:${mw}px;overflow:auto"><table style="font-size:12px;border-collapse:collapse;width:100%"><thead><tr style="text-align:left;color:#777"><th>Butas</th><th>Aukšt.</th><th>Kamb.</th><th>m²</th><th style="text-align:right">Kaina €</th><th style="text-align:right">€/m²</th><th>Statusas</th><th>Data</th></tr></thead><tbody>${it.map(x=>{const vk=x.vnt_kaina||(x.kaina&&x.plotas?Math.round(x.kaina/x.plotas):null); return `<tr><td>${x.url?`<a href="${x.url}" target="_blank" rel="noopener">${(x.korpusas&&x.korpusas!=='-'?x.korpusas+'-':'')+(x.butas_nr||'')}</a>`:(x.butas_nr||'')}</td><td>${x.aukstas??'–'}</td><td>${x.kambariai??'–'}</td><td>${x.plotas!=null?fmt(+x.plotas,1):'–'}</td><td style="text-align:right">${x.kaina?fmt(+x.kaina)+(x.kaina_nuolaida?`<br><small style="color:#1a7f37">${fmt(+x.kaina_nuolaida)} su nuolaida</small>`:''):'–'}</td><td style="text-align:right">${vk?fmt(+vk):'–'}</td><td style="color:${stCol(x.statusas)}">${x.statusas||'–'}${x.privalumai?`<br><small style="color:#777">${x.privalumai}</small>`:''}</td><td style="white-space:nowrap">${(x.nuskaityta||'').slice(0,10)||'–'}<span class="admin-only"> <button class="delbtn" onclick="__del('u',${x.id})">✕</button></span></td></tr>`;}).join('')}</tbody></table></div>`; };
-  const pPopup=p=>`<div style="min-width:240px"><b style="font-size:13px">${p.projektas}</b><div style="color:#777;font-size:12px">${p.adresas||''}${p.vystytojas?' · '+p.vystytojas:''}</div>
+  const pPopup=p=>`<div style="min-width:240px">${PAV[p.projektas]?`<img src="${PAV[p.projektas]}" style="float:right;margin:0 0 4px 8px;width:110px;border-radius:4px">`:''}<b style="font-size:13px">${p.projektas}</b><div style="color:#777;font-size:12px">${p.adresas||''}${p.vystytojas?' · '+p.vystytojas:''}</div>
     <table style="margin-top:6px;font-size:12px;border-collapse:collapse">
     <tr><td style="color:#777;padding:2px 10px 2px 0">Butų / laisvų</td><td>${p.n?p.n+' / '+p.nl:'–'} · ${p.stage}</td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">Plotas</td><td>${rng(p.pmin,p.pmax,1)} m²</td></tr>
