@@ -1,0 +1,284 @@
+<!doctype html><html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Turto verčių paieška</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control panel left (sticky on desktop), results right; stacks on phone. Data-tool treatment, tabular numerals everywhere. */
+:root{
+  --bg:#f3f5f6; --panel:#ffffff; --fg:#17212b; --muted:#5d6b78; --line:#d8dee3;
+  --accent:#0e6e73; --accent-fg:#ffffff; --accent-soft:#dcefef;
+  --warn:#9a5b00; --warn-soft:#fff1d6; --good:#2a6f2a;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10161b; --panel:#182027; --fg:#e6ebef; --muted:#97a4b0; --line:#2a353f;
+  --accent:#4fb3b8; --accent-fg:#0b1a1b; --accent-soft:#163338; --warn:#e3a94a; --warn-soft:#3a2d12; --good:#7fc27f; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10161b; --panel:#182027; --fg:#e6ebef; --muted:#97a4b0; --line:#2a353f;
+  --accent:#4fb3b8; --accent-fg:#0b1a1b; --accent-soft:#163338; --warn:#e3a94a; --warn-soft:#3a2d12; --good:#7fc27f; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;padding-block:18px 14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+header .meta{color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:820px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.controls{position:sticky;top:12px}
+@media (max-width:820px){.controls{position:static}}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.field{margin-bottom:12px}
+input,select,button{font:inherit;color:inherit}
+input[type=text],input[type=number],select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px}
+.check input{width:auto;margin:0}
+button.primary{width:100%;padding:9px;border:0;border-radius:6px;background:var(--accent);color:var(--accent-fg);font-weight:600;cursor:pointer}
+button.ghost{padding:5px 9px;border:1px solid var(--line);border-radius:6px;background:transparent;cursor:pointer;font-size:12px}
+.sugg{position:relative}
+.sugg ul{position:absolute;z-index:5;left:0;right:0;top:100%;margin:2px 0 0;padding:4px 0;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;max-height:260px;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.sugg li{padding:6px 10px;cursor:pointer;font-size:13px}
+.sugg li:hover,.sugg li.active{background:var(--accent-soft)}
+.sugg li small{display:block;color:var(--muted);font-size:11px}
+.center{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;word-break:break-word}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tile .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tile .v{font-family:var(--mono);font-size:20px;font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums}
+.tile .s{font-size:11px;color:var(--muted)}
+.results{min-width:0}
+.split{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px}
+.leaflet-container{font:inherit}
+.leaflet-popup-content{font-size:12px;line-height:1.4}
+.lmark{background:transparent;border:0}
+.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:12px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel)}
+th.sorted{color:var(--accent)}
+tr:hover td{background:var(--accent-soft)}
+td.adr{white-space:normal;min-width:220px;max-width:360px}
+.pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;border:1px solid var(--line);color:var(--muted)}
+.pill.subj{border-color:var(--accent);color:var(--accent)}
+.pill.warn{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:transparent;cursor:pointer;font-size:13px}
+.tabs button[aria-selected=true]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style></head><body>
+<header>
+  <h1>Turto verčių paieška</h1>
+  <span class="meta" id="meta">Kraunami duomenys…</span>
+</header>
+
+<div class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-tab="paieska" id="tab-paieska">Palyginamieji</button>
+  <button role="tab" aria-selected="false" data-tab="sav" id="tab-sav">Savivaldybės</button>
+</div>
+
+<section id="view-paieska">
+<div class="layout">
+  <aside class="panel controls">
+    <h2>Paieškos centras</h2>
+    <div class="field sugg">
+      <label for="q">Adresas (bet koks LT adresas) arba „platuma, ilguma“</label>
+      <input type="text" id="q" placeholder="pvz. Savanorių pr. 100, Kaunas  /  54.8972, 23.9120" autocomplete="off">
+      <ul id="sugg" hidden></ul>
+      <div class="center" id="center">Centras nepasirinktas</div>
+    </div>
+    <h2>Filtrai</h2>
+    <div class="row2">
+      <div class="field"><label for="tipas">Tipas</label>
+        <select id="tipas"><option value="butas">Butas</option><option value="zemes_sklypas">Žemės sklypas</option><option value="pastatas">Pastatas</option><option value="patalpos">Patalpos</option><option value="kompleksas">Kompleksas</option><option value="">Visi</option></select></div>
+      <div class="field"><label for="r">Spindulys, km</label><input type="number" id="r" value="3" min="0.2" step="0.5"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="men">Laikotarpis, mėn.</label><input type="number" id="men" value="24" min="1" step="6"></div>
+      <div class="field"><label for="vaid">Vaidmuo</label>
+        <select id="vaid"><option value="">Visi</option><option value="palyginamasis">Tik sandoriai</option><option value="vertinamas">Tik vertinimai</option></select></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="pl">Plotas (m² / ha)</label><input type="number" id="pl" placeholder="nebūtina" step="any"></div>
+      <div class="field"><label for="tol">± dalis</label><input type="number" id="tol" value="0.3" min="0" max="1" step="0.1"></div>
+    </div>
+    <div class="check"><input type="checkbox" id="tik" checked><label for="tik" style="margin:0">Tik tikslios koordinatės (adresas/gatvė)</label></div>
+    <div class="check"><input type="checkbox" id="nuoma"><label for="nuoma" style="margin:0">Įtraukti nuomos įrašus</label></div>
+    <button class="primary" id="go">Ieškoti</button>
+    <p class="note">Centrą galite nurodyti ir spustelėję žemėlapyje. Kaimų lygmens įrašai (gyvenvietė) rodomi tik išjungus „tik tikslios“.</p>
+  </aside>
+
+  <div class="results">
+    <div class="tiles" id="tiles"></div>
+    <div class="split">
+      <div class="panel" style="padding:8px">
+        <div id="map" style="height:520px;border-radius:6px;z-index:0"></div>
+        <div class="legend"><span><i style="background:#0e6e73"></i>sandoris</span><span><i style="background:#c47a00"></i>vertinimas</span><span><i style="background:#999"></i>kiti objektai (už spindulio / be filtro)</span><span>Spustelėkite žemėlapyje – naujas centras</span></div>
+      </div>
+      <div class="tablewrap" id="tablewrap" style="max-height:420px;overflow:auto"><div class="empty">Kraunama…</div></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="view-sav" hidden>
+  <div class="panel" style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+    <div class="field" style="margin:0;min-width:180px"><label for="s-tipas">Tipas</label>
+      <select id="s-tipas"><option value="butas">Butas</option><option value="zemes_sklypas">Žemės sklypas</option><option value="pastatas">Pastatas</option><option value="patalpos">Patalpos</option></select></div>
+    <div class="field" style="margin:0;min-width:180px"><label for="s-vr">Įrašai</label>
+      <select id="s-vr"><option value="sandoris">Sandoriai (palyginamieji)</option><option value="rinkos">Vertinimai (rinkos vertė)</option><option value="nuoma">Nuoma</option></select></div>
+    <div class="field" style="margin:0;min-width:120px"><label for="s-min">Min. įrašų</label><input type="number" id="s-min" value="10" min="1"></div>
+  </div>
+  <div class="tablewrap" id="savwrap"></div>
+  <p class="note">Mediana ir kvartiliai skaičiuojami iš vieneto kainos (EUR/m² arba EUR/a) per visą laikotarpį; nuomai – EUR/m²/mėn.</p>
+</section>
+
+<script>
+(async function(){
+  const $=id=>document.getElementById(id);
+  const fmt=(n,d=0)=>n==null?'–':Number(n).toLocaleString('lt-LT',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const TIPAI={butas:'butas',zemes_sklypas:'sklypas',pastatas:'pastatas',patalpos:'patalpos',kompleksas:'kompleksas',kita:'kita',inzineriniai:'inžin.'};
+  const SB='https://zbgugliqnjohqbotssgl.supabase.co', KEY='sb_publishable_PpoYli-Lf-OiTJkJVTP15A_fzR58I3D';
+  const HDR={apikey:KEY,authorization:'Bearer '+KEY};
+  let D=[];
+  try{
+    const sel='id,vaidmuo,tipas,adresas,savivaldybe,data,kaina,vnt_kaina,vnt,plotas,plotas_vnt,statybos_metai,paskirtis,vertes_rusis,geokodavimas,lat,lon,ataskaita_id';
+    for(let off=0;;off+=1000){
+      const r=await fetch(`${SB}/rest/v1/objektai?select=${sel}&order=id&offset=${off}&limit=1000`,{headers:HDR}); const page=await r.json();
+      if(!Array.isArray(page)) throw new Error(page.message||'klaida');
+      D.push(...page); if(page.length<1000) break;
+    }
+    const ra=await fetch(`${SB}/rest/v1/ataskaitos?select=id,ataskaitos_nr,vertintojo_imone,saltinis_failas`,{headers:HDR}); const A=new Map((await ra.json()).map(a=>[a.id,a]));
+    D=D.map(o=>{const a=A.get(o.ataskaita_id)||{}; return {id:o.id,v:o.vaidmuo,t:o.tipas,adr:o.adresas,sav:o.savivaldybe,d:o.data,k:o.kaina!=null?+o.kaina:null,vk:o.vnt_kaina!=null?+o.vnt_kaina:null,vnt:o.vnt,pl:o.plotas!=null?+o.plotas:null,plv:o.plotas_vnt,sm:o.statybos_metai,pask:o.paskirtis,vr:o.vertes_rusis,geo:(o.geokodavimas||'').replace(';abejotina>60km','!')||null,lat:o.lat,lon:o.lon,nr:a.ataskaitos_nr,vert:a.vertintojo_imone,f:a.saltinis_failas};});
+    const nGeo=D.filter(o=>o.lat!=null).length;
+    $('meta').textContent=`${fmt(D.length)} objektai iš ${fmt(A.size)} vertinimo ataskaitų · ${fmt(nGeo)} su koordinatėmis · gyvi duomenys iš Supabase`;
+  }catch(e){ $('meta').textContent='Nepavyko užkrauti duomenų: '+e.message; return; }
+
+  // ---- žemėlapis
+  const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri World Imagery'});
+  const lbl=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CARTO'});
+  const map=L.map('map',{layers:[osm]}).setView([54.8972,23.9120],13);
+  L.control.layers({'Kartografinis':osm,'Palydovinis':L.layerGroup([sat,lbl])},{},{collapsed:false}).addTo(map);
+  L.control.scale({imperial:false}).addTo(map);
+  const allLayer=L.layerGroup().addTo(map), resLayer=L.layerGroup().addTo(map); let centerMarker=null, circle=null;
+  const popup=o=>`<b>${o.adr||'nuasmeninta'}</b><br>${o.v==='vertinamas'?'vertinimas':'sandoris'} · ${TIPAI[o.t]||o.t||''} · ${o.d?o.d.slice(0,7):'–'}<br>${o.k!=null?fmt(o.k)+' €':''} ${o.vk!=null?'· <b>'+fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' '+(o.vnt||'')+'</b>':''}<br>${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):''} ${o.sm?'· '+o.sm+' m.':''}<br><small>${o.nr||''} · ${o.vert||''}<br>tikslumas: ${(o.geo||'–').replace('!',' (abejotina)')}</small>`;
+  for(const o of D){ if(o.lat==null) continue; L.circleMarker([o.lat,o.lon],{radius:3,color:'#777',weight:1,fillColor:'#999',fillOpacity:.5}).bindPopup(popup(o)).addTo(allLayer); }
+  map.on('click',e=>{ setCenter(e.latlng.lat,e.latlng.lng,'pažymėta žemėlapyje'); $('q').value=`${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`; run(); });
+
+  // ---- centras: adreso paieška bazėje arba koordinatės
+  let center=null;
+  const addrIndex=(()=>{const m=new Map(); for(const o of D){ if(o.lat==null||!o.adr) continue; const k=o.adr; if(!m.has(k)) m.set(k,{adr:k,lat:o.lat,lon:o.lon,geo:o.geo,n:0}); m.get(k).n++; } return [...m.values()];})();
+  const norm=s=>s.toLowerCase().replace(/[ąčęėįšųūž]/g,ch=>({ą:'a',č:'c',ę:'e',ė:'e',į:'i',š:'s',ų:'u',ū:'u',ž:'z'}[ch]));
+  function setCenter(lat,lon,label){ center={lat,lon}; $('center').textContent=`${label?label+' · ':''}${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    if(centerMarker) centerMarker.setLatLng([lat,lon]); else centerMarker=L.marker([lat,lon]).addTo(map);
+    const r=parseFloat($('r').value)*1000||3000;
+    if(circle) circle.setLatLng([lat,lon]).setRadius(r); else circle=L.circle([lat,lon],{radius:r,color:'#0e6e73',weight:1,fillOpacity:.04}).addTo(map);
+    map.fitBounds(circle.getBounds(),{padding:[10,10]}); }
+  let geoTimer=null;
+  async function nominatim(q){ try{ const r=await fetch('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:q+', Lietuva',format:'jsonv2',limit:5,countrycodes:'lt'}),{headers:{'accept-language':'lt'}}); return (await r.json()).map(x=>({adr:x.display_name.split(', ').slice(0,4).join(', '),lat:+x.lat,lon:+x.lon,geo:'OSM: '+x.type,n:0,osm:true})); }catch(e){ return []; } }
+  const sugg=$('sugg'); let act=-1, items=[];
+  $('q').addEventListener('input',()=>{
+    const v=$('q').value.trim(); const m=v.match(/^(-?\d{1,2}[.,]\d+)\s*[,; ]\s*(-?\d{1,3}[.,]\d+)$/);
+    if(m){ setCenter(parseFloat(m[1].replace(',','.')),parseFloat(m[2].replace(',','.')),'koordinatės'); sugg.hidden=true; return; }
+    if(v.length<3){ sugg.hidden=true; return; }
+    const terms=norm(v).split(/\s+/).filter(Boolean);
+    const local=addrIndex.filter(a=>{const n=norm(a.adr); return terms.every(t=>n.includes(t));}).sort((a,b)=>(b.geo==='adresas')-(a.geo==='adresas')||b.n-a.n).slice(0,6);
+    const show=()=>{ sugg.innerHTML=items.map((a,i)=>`<li data-i="${i}">${a.adr}<small>${a.osm?a.geo:(a.geo||'–')+' · '+a.n+' įr. bazėje'}</small></li>`).join(''); sugg.hidden=items.length===0; act=-1; };
+    items=local; show();
+    clearTimeout(geoTimer); geoTimer=setTimeout(async()=>{ const osm=await nominatim(v); if($('q').value.trim()!==v) return; items=[...local,...osm]; show(); },600);
+  });
+  sugg.addEventListener('click',e=>{const li=e.target.closest('li'); if(!li) return; pick(items[+li.dataset.i]);});
+  $('q').addEventListener('keydown',e=>{
+    if(sugg.hidden) return;
+    if(e.key==='ArrowDown'){act=Math.min(act+1,items.length-1);} else if(e.key==='ArrowUp'){act=Math.max(act-1,0);} else if(e.key==='Enter'&&act>=0){pick(items[act]);return;} else if(e.key==='Escape'){sugg.hidden=true;return;} else return;
+    e.preventDefault(); [...sugg.children].forEach((li,i)=>li.classList.toggle('active',i===act));
+  });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.sugg')) sugg.hidden=true; });
+  function pick(a){ setCenter(a.lat,a.lon,a.adr); $('q').value=a.adr; sugg.hidden=true; run(); }
+
+  // ---- paieška
+  const R=6371000;
+  function dist(lat1,lon1,lat2,lon2){const p=Math.PI/180,dLat=(lat2-lat1)*p,dLon=(lon2-lon1)*p,a=Math.sin(dLat/2)**2+Math.cos(lat1*p)*Math.cos(lat2*p)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(a));}
+  let res=[], sortKey='dist', sortDir=1;
+  function run(){
+    if(!center){ $('tablewrap').innerHTML='<div class="empty">Pasirinkite centrą: įveskite adresą iš bazės arba koordinates.</div>'; return; }
+    const tipas=$('tipas').value, r=parseFloat($('r').value)*1000||3000, men=parseInt($('men').value)||24, vaid=$('vaid').value;
+    const pl=parseFloat($('pl').value), tol=parseFloat($('tol').value)||0.3, tik=$('tik').checked, nuoma=$('nuoma').checked;
+    const minDate=new Date(); minDate.setMonth(minDate.getMonth()-men); const minD=minDate.toISOString().slice(0,10);
+    res=[];
+    for(const o of D){
+      if(o.lat==null) continue;
+      if(tipas&&o.t!==tipas) continue;
+      if(vaid&&o.v!==vaid) continue;
+      if(!nuoma&&(o.vr==='nuoma'||o.vr==='nuomos')) continue;
+      if(tik&&!(o.geo==='adresas'||o.geo==='gatve')) continue;
+      if(o.d&&o.d<minD) continue;
+      if(pl&&o.pl&&(o.pl<pl*(1-tol)||o.pl>pl*(1+tol))) continue;
+      const dd=dist(center.lat,center.lon,o.lat,o.lon); if(dd>r) continue;
+      res.push(Object.assign({dist:dd},o));
+    }
+    render();
+  }
+  function quant(arr,q){ if(!arr.length) return null; const s=[...arr].sort((a,b)=>a-b); const i=(s.length-1)*q, lo=Math.floor(i), hi=Math.ceil(i); return s[lo]+(s[hi]-s[lo])*(i-lo); }
+  function render(){
+    const vk=res.filter(o=>o.vk>0).map(o=>o.vk); const sand=res.filter(o=>o.v==='palyginamasis');
+    const vnt=res.find(o=>o.vnt)?.vnt||'';
+    const dates=res.map(o=>o.d).filter(Boolean).sort();
+    $('tiles').innerHTML=[
+      ['Rasta',fmt(res.length),`${fmt(sand.length)} sandoriai · ${fmt(res.length-sand.length)} vertinimai`],
+      ['Mediana',vk.length?fmt(quant(vk,.5),vnt.includes('men')?2:0):'–',vnt],
+      ['Kvartiliai',vk.length?`${fmt(quant(vk,.25))}–${fmt(quant(vk,.75))}`:'–','25 % – 75 %'],
+      ['Laikotarpis',dates.length?`${dates[0].slice(0,7)} … ${dates[dates.length-1].slice(0,7)}`:'–','sandorių datos'],
+    ].map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+    const cols=[['dist','Atst.','num'],['d','Data',''],['v','',''],['t','Tipas',''],['adr','Adresas','adr'],['pl','Plotas','num'],['k','Kaina €','num'],['vk','Vnt. kaina','num'],['sm','Statyta','num'],['geo','Tikslumas',''],['nr','Ataskaita','']];
+    const sorted=[...res].sort((a,b)=>{const x=a[sortKey],y=b[sortKey]; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir;});
+    if(!res.length){ $('tablewrap').innerHTML='<div class="empty">Nieko nerasta. Padidinkite spindulį ar laikotarpį, arba išjunkite „tik tikslios koordinatės“.</div>'; draw(); return; }
+    $('tablewrap').innerHTML=`<table><thead><tr>${cols.map(([k,l,c])=>`<th class="${c} ${sortKey===k?'sorted':''}" data-k="${k}">${l}${sortKey===k?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${
+      sorted.map(o=>`<tr><td class="num">${o.dist<1000?Math.round(o.dist)+' m':(o.dist/1000).toFixed(1)+' km'}</td><td>${o.d?o.d.slice(0,7):'–'}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small></td></tr>`).join('')}</tbody></table>`;
+    $('tablewrap').querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;} render();}));
+    draw();
+  }
+  function draw(){
+    resLayer.clearLayers(); const ids=new Set(res.map(o=>o.id));
+    for(const o of res){ const col=o.v==='vertinamas'?'#c47a00':'#0e6e73';
+      L.circleMarker([o.lat,o.lon],{radius:6,color:'#fff',weight:1.5,fillColor:col,fillOpacity:.95}).bindPopup(popup(o)).addTo(resLayer); }
+    if(circle&&center) circle.setRadius(parseFloat($('r').value)*1000||3000);
+  }
+  $('go').addEventListener('click',run);
+  ['tipas','r','men','vaid','pl','tol','tik','nuoma'].forEach(id=>$(id).addEventListener('change',()=>center&&run()));
+
+  // ---- savivaldybių suvestinė
+  function renderSav(){
+    const t=$('s-tipas').value, vr=$('s-vr').value, min=parseInt($('s-min').value)||1;
+    const g=new Map();
+    for(const o of D){
+      if(o.t!==t||!o.sav||!(o.vk>0)) continue;
+      const isRent=o.vr==='nuoma'||o.vr==='nuomos';
+      if(vr==='nuoma'?!isRent:(isRent||(vr==='sandoris'?o.v!=='palyginamasis':o.v!=='vertinamas'))) continue;
+      if(!g.has(o.sav)) g.set(o.sav,[]); g.get(o.sav).push(o);
+    }
+    const rows=[...g.entries()].map(([s,arr])=>{const v=arr.map(o=>o.vk),d=arr.map(o=>o.d).filter(Boolean).sort();return {s,n:arr.length,q1:quant(v,.25),med:quant(v,.5),q3:quant(v,.75),nuo:d[0]||'',iki:d[d.length-1]||'',vnt:arr[0].vnt||''};}).filter(x=>x.n>=min).sort((a,b)=>b.n-a.n);
+    $('savwrap').innerHTML=rows.length?`<table><thead><tr><th>Savivaldybė</th><th class="num">Įrašų</th><th class="num">Q1</th><th class="num">Mediana</th><th class="num">Q3</th><th>Vnt.</th><th>Nuo</th><th>Iki</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${x.s}</td><td class="num">${x.n}</td><td class="num">${fmt(x.q1,x.vnt.includes('men')?2:0)}</td><td class="num"><b>${fmt(x.med,x.vnt.includes('men')?2:0)}</b></td><td class="num">${fmt(x.q3,x.vnt.includes('men')?2:0)}</td><td>${x.vnt}</td><td>${x.nuo.slice(0,7)}</td><td>${x.iki.slice(0,7)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nėra įrašų pagal šiuos filtrus.</div>';
+  }
+  ['s-tipas','s-vr','s-min'].forEach(id=>$(id).addEventListener('change',renderSav));
+  document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+    $('view-paieska').hidden=b.dataset.tab!=='paieska'; $('view-sav').hidden=b.dataset.tab!=='sav';
+    if(b.dataset.tab==='sav') renderSav(); else draw();
+  }));
+  renderSav();
+
+  // pradinė būsena: Kauno centras
+  setCenter(54.8972,23.9120,'Kaunas, Laisvės al.'); $('q').value='Kaunas, Laisvės al.'; run();
+})();
+</script></body></html>
