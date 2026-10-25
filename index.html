@@ -62,6 +62,7 @@ header .meta{color:var(--warn);font-size:12px;font-family:var(--mono)}header .me
 @media (max-width:820px){.controls{position:static}}
 label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;letter-spacing:.01em}
 .field{margin-bottom:12px}
+.mini{display:flex;align-items:center;gap:6px;margin-top:4px}.mini input[type=number]{padding:4px 7px;font-size:12px;font-family:var(--mono)}.mini span{color:var(--muted)}
 .slv{float:right;color:var(--fg);font-family:var(--mono);font-size:11px}
 .dual{position:relative;height:26px}
 .dual .fill{position:absolute;top:12px;height:2px;background:var(--accent);pointer-events:none}
@@ -176,8 +177,8 @@ td.adr{white-space:normal;min-width:140px}
         <select id="vaid"><option value="">Visi</option><option value="palyginamasis">Tik sandoriai</option><option value="vertinamas">Tik vertinimai</option></select></div>
     </div>
     <div class="row2">
-      <div class="field" style="grid-column:1/-1"><label>Plotas <span class="slv" id="pl_lbl"></span></label><div class="dual"><div class="fill" id="pl_fill"></div><input type="range" id="pl_a"><input type="range" id="pl_b"></div><input type="hidden" id="pl1"><input type="hidden" id="pl2"></div>
-      <div class="field" style="grid-column:1/-1"><label>Statyta <span class="slv" id="sm_lbl"></span></label><div class="dual"><div class="fill" id="sm_fill"></div><input type="range" id="sm_a"><input type="range" id="sm_b"></div><input type="hidden" id="sm1" value="1890"><input type="hidden" id="sm2" value=""></div>
+      <div class="field" style="grid-column:1/-1"><label>Plotas <span class="slv" id="pl_lbl"></span></label><div class="dual"><div class="fill" id="pl_fill"></div><input type="range" id="pl_a"><input type="range" id="pl_b"></div><div class="mini"><input type="number" id="pl1" placeholder="nuo" step="any" min="0"><span>–</span><input type="number" id="pl2" placeholder="iki" step="any" min="0"></div></div>
+      <div class="field" style="grid-column:1/-1"><label>Statyta <span class="slv" id="sm_lbl"></span></label><div class="dual"><div class="fill" id="sm_fill"></div><input type="range" id="sm_a"><input type="range" id="sm_b"></div><div class="mini"><input type="number" id="sm1" value="1890" step="1"><span>–</span><input type="number" id="sm2" value="" step="1"></div></div>
     </div>
     <div class="check"><input type="checkbox" id="tik" checked><label for="tik" style="margin:0">Tik tikslios koordinatės</label></div>
     <div class="check"><input type="checkbox" id="nuoma"><label for="nuoma" style="margin:0">Nuomos įrašai</label></div>
@@ -486,12 +487,14 @@ td.adr{white-space:normal;min-width:140px}
   function dualSlider(a,b,lo,hi,fill,lbl,cfg){ const A=$(a),B=$(b); const setScale=()=>{ A.min=B.min=cfg.min; A.max=B.max=cfg.max; A.step=B.step=cfg.step; A.value=cfg.min; B.value=cfg.max; apply(false); };
     const apply=(fire)=>{ let x=+A.value,y=+B.value; if(x>y){ if(document.activeElement===A) B.value=x,y=x; else A.value=y,x=y; } const noLo=x<=+cfg.min, noHi=y>=+cfg.max; $(lo).value=noLo?(cfg.loDef??''):x; $(hi).value=noHi?(cfg.hiDef??''):y;
       const pct=v=>(v-cfg.min)/(cfg.max-cfg.min)*100; $(fill).style.left=pct(x)+'%'; $(fill).style.width=(pct(y)-pct(x))+'%'; $(lbl).textContent=(noLo&&noHi)?'visi':`${noLo?'…':cfg.f(x)} – ${noHi?'…':cfg.f(y)}${cfg.u?' '+cfg.u:''}`; if(fire) $(lo).dispatchEvent(new Event('change')); };
-    [A,B].forEach(e=>{ e.addEventListener('input',()=>apply(false)); e.addEventListener('change',()=>apply(true)); }); setScale(); return {setScale:(c)=>{ Object.assign(cfg,c); setScale(); }}; }
+    [A,B].forEach(e=>{ e.addEventListener('input',()=>apply(false)); e.addEventListener('change',()=>apply(true)); });
+    const fromInputs=()=>{ const x=parseFloat($(lo).value), y=parseFloat($(hi).value); A.value=isNaN(x)?cfg.min:Math.min(Math.max(x,cfg.min),cfg.max); B.value=isNaN(y)?cfg.max:Math.min(Math.max(y,cfg.min),cfg.max); const pct=v=>(v-cfg.min)/(cfg.max-cfg.min)*100; $(fill).style.left=pct(+A.value)+'%'; $(fill).style.width=(pct(+B.value)-pct(+A.value))+'%'; $(lbl).textContent=(isNaN(x)&&isNaN(y))?'visi':`${isNaN(x)?'…':cfg.f(x)} – ${isNaN(y)?'…':cfg.f(y)}${cfg.u?' '+cfg.u:''}`; };
+    [lo,hi].forEach(id=>$(id).addEventListener('input',fromInputs)); setScale(); return {setScale:(c)=>{ Object.assign(cfg,c); setScale(); }}; }
   const PLS=dualSlider('pl_a','pl_b','pl1','pl2','pl_fill','pl_lbl',{min:0,max:500,step:5,u:'m²',f:v=>v});
   dualSlider('sm_a','sm_b','sm1','sm2','sm_fill','sm_lbl',{min:1890,max:DEFSM2,step:1,loDef:1890,hiDef:DEFSM2,f:v=>v});
   $('tipas').addEventListener('change',()=>{ const ha=$('tipas').value==='zemes_sklypas'; PLS.setScale(ha?{min:0,max:10,step:.1,u:'ha',f:v=>(+v).toLocaleString('lt-LT',{maximumFractionDigits:1})}:{min:0,max:500,step:5,u:'m²',f:v=>v}); });
   $('go').addEventListener('click',run);
-  ['tipas','pog','men','vaid','pl1','sm1','tik','nuoma','vyst','vert','tikkain','st_pl','st_st','st_pa','tikmano','kiti'].forEach(id=>$(id).addEventListener('change',run));
+  ['tipas','pog','men','vaid','pl1','pl2','sm1','sm2','tik','nuoma','vyst','vert','tikkain','st_pl','st_st','st_pa','tikmano','kiti'].forEach(id=>$(id).addEventListener('change',run));
   let mvT=null; map.on('moveend',()=>{ clearTimeout(mvT); mvT=setTimeout(run,250); });
 
   // ---- pogrupiai pagal tipą
