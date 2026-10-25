@@ -384,7 +384,8 @@ td.adr{white-space:normal;min-width:140px}
     <tr><td>${o.v==='vertinamas'?'Vertės data':'Sandorio data'}</td><td>${fdate(o)}</td></tr>
     <tr><td>Šaltinis</td><td>${o.nr||''}<br><span style="color:var(--muted)">${o.vert||''}</span></td></tr>
     <tr><td>Tikslumas</td><td>${(o.geo||'–').replace('!',' (abejotina)')}</td></tr></table><div class="admin-only pact"><button class="ebtn" onclick="__edit('o',${o.id})">Redaguoti</button><button class="delbtn" onclick="__del('o',${o.id})">Trinti</button>${o.aid?`<button class="delbtn" onclick="__del('a',${o.aid})">Trinti ataskaitą</button>`:''}</div></div>`;
-  for(const o of D){ if(o.lat==null) continue; L.circleMarker([o.lat,o.lon],{radius:4.5,color:'#666',weight:1,fillColor:'#aaa',fillOpacity:.7,bubblingMouseEvents:false}).bindPopup(popup(o),{maxWidth:320}).addTo(allLayer); }
+  function buildAll(){ allLayer.clearLayers(); for(const o of D){ if(o.lat==null) continue; if(o.mano?!$('tikmano').checked:!$('kiti').checked) continue; L.circleMarker([o.lat,o.lon],{radius:4.5,color:'#666',weight:1,fillColor:'#aaa',fillOpacity:.7,bubblingMouseEvents:false}).bindPopup(popup(o),{maxWidth:320}).addTo(allLayer); } }
+  buildAll(); ['kiti','tikmano'].forEach(id=>$(id).addEventListener('change',buildAll));
 
   // ---- centras: adreso paieška bazėje arba koordinatės
   let center=null;
