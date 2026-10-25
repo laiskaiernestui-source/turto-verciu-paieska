@@ -56,6 +56,10 @@ button.ghost{padding:5px 9px;border:1px solid var(--line);border-radius:6px;back
 [hidden]{display:none!important}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+#tiles2 .tile{border-left:3px solid var(--accent)}
+#tiles .tile{border-left:3px solid #3f5a80}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #tiles .tile{border-left-color:#7f9cc4}}
+:root[data-theme="dark"] #tiles .tile{border-left-color:#7f9cc4}
 .tile .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .tile .v{font-family:var(--mono);font-size:20px;font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums}
 .tile .s{font-size:11px;color:var(--muted)}
@@ -367,7 +371,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
         ['Mediana',vk.length?fmt(quant(vk,.5)):'–','EUR/m2 (pagal butus)'],
         ['Kvartiliai',vk.length?`${fmt(quant(vk,.25))}–${fmt(quant(vk,.75))}`:'–','25 % – 75 %'],
         ['Kainų data',dts.length?(dts[0]===dts[dts.length-1]?dts[0]:`${dts[0]} … ${dts[dts.length-1]}`):'–','nuskaitymo data'],
-      ].map(([k,v,s2])=>`<div class="tile" style="border-left:3px solid #1a9a4a"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s2}</div></div>`).join(''); }
+      ].map(([k,v,s2])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s2}</div></div>`).join(''); }
     $('vystwrap').innerHTML=list.length?`<table><thead><tr><th>Data</th><th></th><th>Tipas</th><th class="adr">Adresas</th><th class="num">Plotas</th><th class="num">Kaina €</th><th class="num">Vnt. kaina</th><th class="num">Statyta</th><th>Tikslumas</th><th>Ataskaita</th></tr></thead><tbody>${list.map((p,i)=>`<tr class="prow" data-i="${i}" style="cursor:pointer"><td style="white-space:nowrap">${p.data||'–'}</td><td><span class="pill subj">${p.stage}</span></td><td>${p.tipas_t||'butas'}</td><td class="adr"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${p.nopr?'#555':'#1a9a4a'};margin-right:5px"></span><b>▸ ${p.projektas}</b>${p.adresas?`<br><small style="color:var(--muted)">${p.adresas}</small>`:''}${p.n?`<br><small style="color:var(--muted)">${p.n} butų, laisvų ${p.nl}</small>`:''}</td><td class="num">${p.pmin!=null?rng(p.pmin,p.pmax,0)+' m²':'–'}</td><td class="num">${p.kmin?rng(p.kmin,p.kmax):'–'}</td><td class="num">${p.vmin?rng(p.vmin,p.vmax)+' <small>EUR/m2</small>':'–'}</td><td class="num">${p.metai||'–'}</td><td><span class="pill">projektas</span></td><td>${p.portalas}<br><small style="color:var(--muted)">${p.vystytojas||''}</small><div class="admin-only"><button class="delbtn" onclick="event.stopPropagation();__del('p','${encodeURIComponent(p.portalas)}','${encodeURIComponent(p.projektas)}')">trinti projektą</button></div></td></tr><tr class="pdet" id="pdet${i}" hidden><td colspan="10" style="background:var(--bg)">${unitsTbl(p,320)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Vystytojų projektų šiame spinduliu nėra.</div>';
     $('vystwrap').querySelectorAll('.prow').forEach(tr=>tr.addEventListener('click',e=>{ if(e.target.closest('a')) return; const d=$('pdet'+tr.dataset.i); d.hidden=!d.hidden; const b=tr.querySelector('b'); b.textContent=b.textContent.replace(/^[▸▾] /,'')&&(d.hidden?'▸ ':'▾ ')+b.textContent.replace(/^[▸▾] /,''); }));
   }
