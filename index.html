@@ -100,7 +100,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     <div class="row2">
       <div class="field"><label for="tipas">Tipas</label>
         <select id="tipas"><option value="butas">Butas</option><option value="zemes_sklypas">Žemės sklypas</option><option value="pastatas">Pastatas</option><option value="patalpos">Patalpos</option><option value="kompleksas">Kompleksas</option><option value="">Visi</option></select></div>
-      <div class="field"><label for="r">Spindulys, km</label><input type="number" id="r" value="3" min="0.2" step="0.5"></div>
+      <div class="field"><label for="r">Spindulys, km</label><input type="number" id="r" value="5" min="0.2" step="0.5"></div>
     </div>
     <div class="row2">
       <div class="field"><label for="men">Laikotarpis, mėn.</label><input type="number" id="men" value="24" min="1" step="6"></div>
@@ -157,7 +157,11 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
       if(!Array.isArray(page)) throw new Error(page.message||'klaida');
       D.push(...page); if(page.length<1000) break;
     }
-    const ra=await fetch(`${SB}/rest/v1/ataskaitos?select=id,ataskaitos_nr,vertintojo_imone,saltinis_failas`,{headers:HDR}); const A=new Map((await ra.json()).map(a=>[a.id,a]));
+    const A=new Map();
+    for(let off=0;;off+=1000){
+      const ra=await fetch(`${SB}/rest/v1/ataskaitos?select=id,ataskaitos_nr,vertintojo_imone,saltinis_failas&order=id&offset=${off}&limit=1000`,{headers:HDR}); const pg=await ra.json();
+      for(const a of pg) A.set(a.id,a); if(pg.length<1000) break;
+    }
     D=D.map(o=>{const a=A.get(o.ataskaita_id)||{}; return {id:o.id,v:o.vaidmuo,t:o.tipas,adr:o.adresas,sav:o.savivaldybe,d:o.data,k:o.kaina!=null?+o.kaina:null,vk:o.vnt_kaina!=null?+o.vnt_kaina:null,vnt:o.vnt,pl:o.plotas!=null?+o.plotas:null,plv:o.plotas_vnt,sm:o.statybos_metai,pask:o.paskirtis,vr:o.vertes_rusis,geo:(o.geokodavimas||'').replace(';abejotina>60km','!')||null,lat:o.lat,lon:o.lon,nr:a.ataskaitos_nr,vert:a.vertintojo_imone,f:a.saltinis_failas};});
     const nGeo=D.filter(o=>o.lat!=null).length;
     $('meta').textContent=`${fmt(D.length)} objektai iš ${fmt(A.size)} vertinimo ataskaitų · ${fmt(nGeo)} su koordinatėmis · gyvi duomenys iš Supabase`;
@@ -166,7 +170,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   // ---- žemėlapis
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
   const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri World Imagery'});
-  const lbl=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CARTO'});
+  const lbl=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CARTO',opacity:.9});
   const map=L.map('map',{layers:[osm]}).setView([54.8972,23.9120],13);
   L.control.layers({'Kartografinis':osm,'Palydovinis':L.layerGroup([sat,lbl])},{},{collapsed:false}).addTo(map);
   L.control.scale({imperial:false}).addTo(map);
@@ -181,7 +185,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const norm=s=>s.toLowerCase().replace(/[ąčęėįšųūž]/g,ch=>({ą:'a',č:'c',ę:'e',ė:'e',į:'i',š:'s',ų:'u',ū:'u',ž:'z'}[ch]));
   function setCenter(lat,lon,label){ center={lat,lon}; $('center').textContent=`${label?label+' · ':''}${lat.toFixed(5)}, ${lon.toFixed(5)}`;
     if(centerMarker) centerMarker.setLatLng([lat,lon]); else centerMarker=L.marker([lat,lon]).addTo(map);
-    const r=parseFloat($('r').value)*1000||3000;
+    const r=parseFloat($('r').value)*1000||5000;
     if(circle) circle.setLatLng([lat,lon]).setRadius(r); else circle=L.circle([lat,lon],{radius:r,color:'#0e6e73',weight:1,fillOpacity:.04}).addTo(map);
     map.fitBounds(circle.getBounds(),{padding:[10,10]}); }
   let geoTimer=null;
@@ -242,7 +246,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     ].map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
     const cols=[['dist','Atst.','num'],['d','Data',''],['v','',''],['t','Tipas',''],['adr','Adresas','adr'],['pl','Plotas','num'],['k','Kaina €','num'],['vk','Vnt. kaina','num'],['sm','Statyta','num'],['geo','Tikslumas',''],['nr','Ataskaita','']];
     const sorted=[...res].sort((a,b)=>{const x=a[sortKey],y=b[sortKey]; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir;});
-    if(!res.length){ $('tablewrap').innerHTML='<div class="empty">Nieko nerasta. Padidinkite spindulį ar laikotarpį, arba išjunkite „tik tikslios koordinatės“.</div>'; draw(); return; }
+    if(!res.length){ $('tablewrap').innerHTML='<div class="empty">Nieko nerasta pagal filtrus. Pilki taškai žemėlapyje – kiti bazės objektai: padidinkite spindulį ar laikotarpį, pakeiskite tipą arba išjunkite „tik tikslios koordinatės“.</div>'; draw(); return; }
     $('tablewrap').innerHTML=`<table><thead><tr>${cols.map(([k,l,c])=>`<th class="${c} ${sortKey===k?'sorted':''}" data-k="${k}">${l}${sortKey===k?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${
       sorted.map(o=>`<tr><td class="num">${o.dist<1000?Math.round(o.dist)+' m':(o.dist/1000).toFixed(1)+' km'}</td><td>${o.d?o.d.slice(0,7):'–'}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small></td></tr>`).join('')}</tbody></table>`;
     $('tablewrap').querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;} render();}));
