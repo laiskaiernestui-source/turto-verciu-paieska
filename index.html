@@ -92,7 +92,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   <aside class="panel controls">
     <div class="check"><input type="checkbox" id="vyst"><label for="vyst" style="margin:0"><b>Vystytojų skelbimai</b> <small style="color:var(--muted)">(naujos statybos, pardavimo kainos)</small></label></div>
     <div class="check" style="margin-bottom:14px"><input type="checkbox" id="vert" checked><label for="vert" style="margin:0"><b>Turto vertinimai</b> <small style="color:var(--muted)">(vertinimai ir sandoriai)</small></label></div>
-    <h2>Paieškos centras</h2>
+    <h2>Rasti adresą žemėlapyje</h2>
     <div class="field sugg">
       <label for="q">Adresas (bet koks LT adresas) arba „platuma, ilguma“</label>
       <input type="text" id="q" placeholder="pvz. Savanorių pr. 100, Kaunas  /  54.8972, 23.9120" autocomplete="off">
@@ -104,7 +104,6 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
       <div class="field"><label for="tipas">Tipas</label>
         <select id="tipas"><option value="butas">Butas</option><option value="zemes_sklypas">Žemės sklypas</option><option value="pastatas">Pastatas</option><option value="patalpos">Patalpos</option><option value="kompleksas">Kompleksas</option><option value="">Visi</option></select></div>
       <div class="field"><label for="pog">Pogrupis</label><select id="pog"><option value="">Visi</option></select></div>
-      <div class="field"><label for="r">Spindulys, km</label><input type="number" id="r" value="5" min="0.2" step="0.5"></div>
     </div>
     <div class="row2">
       <div class="field"><label for="men">Laikotarpis, mėn.</label><input type="number" id="men" value="24" min="1" step="6"></div>
@@ -120,7 +119,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     <div class="check"><input type="checkbox" id="tik" checked><label for="tik" style="margin:0">Tik tikslios koordinatės (adresas/gatvė)</label></div>
     <div class="check"><input type="checkbox" id="nuoma"><label for="nuoma" style="margin:0">Įtraukti nuomos įrašus</label></div>
     <button class="primary" id="go">Ieškoti</button>
-    <p class="note">Centrą galite nurodyti ir spustelėję žemėlapyje. Kaimų lygmens įrašai (gyvenvietė) rodomi tik išjungus „tik tikslios“.</p>
+    <p class="note">Lentelėje rodomi visi žemėlapyje matomi taškai – artinkite, tolinkite ar perstumkite žemėlapį. Kaimų lygmens įrašai (gyvenvietė) rodomi tik išjungus „tik tikslios“.</p>
   </aside>
 
   <div class="results">
@@ -128,7 +127,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     <div class="split">
       <div class="panel" style="padding:8px">
         <div id="map" style="height:520px;border-radius:6px;z-index:0"></div>
-        <div class="legend"><span><i style="background:#0e6e73"></i>sandoris</span><span><i style="background:#c47a00"></i>vertinimas</span><span><i style="background:#1a9a4a;border-radius:2px"></i>vystytojų projektas su kainomis</span><span><i style="background:#555;border-radius:2px"></i>be kainų (planuojama)</span><span><i style="background:#999"></i>kiti objektai (už spindulio / be filtro)</span><span>Spustelėkite žemėlapyje – naujas centras</span></div>
+        <div class="legend"><span><i style="background:#0e6e73"></i>sandoris</span><span><i style="background:#c47a00"></i>vertinimas</span><span><i style="background:#1a9a4a;border-radius:2px"></i>vystytojų projektas su kainomis</span><span><i style="background:#555;border-radius:2px"></i>be kainų (planuojama)</span><span><i style="background:#999"></i>kiti objektai (už spindulio / be filtro)</span><span>Rodomi visi ekrane matomi taškai</span></div>
       </div>
       <div>
       <div class="tablewrap" id="tablewrap" style="max-height:420px;overflow:auto"><div class="empty">Kraunama…</div></div>
@@ -212,7 +211,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   map.createPane('res'); map.getPane('res').style.zIndex=650;
   L.control.layers({'Kartografinis':osm,'Palydovinis':L.layerGroup([sat,lbl])},{},{collapsed:false}).addTo(map);
   L.control.scale({imperial:false}).addTo(map);
-  const allLayer=L.layerGroup().addTo(map), resLayer=L.layerGroup().addTo(map); let centerMarker=null, circle=null;
+  const allLayer=L.layerGroup().addTo(map), resLayer=L.layerGroup().addTo(map); let centerMarker=null;
   const popup=o=>`<div style="min-width:220px"><b style="font-size:13px">${o.adr||'Adresas nuasmenintas'}</b>
     <table style="margin-top:6px;font-size:12px;border-collapse:collapse">
     <tr><td style="color:#777;padding:2px 10px 2px 0">Tipas</td><td>${TIPAI[o.t]||o.t||'–'}${o.pog?' / '+o.pog:''} · ${o.v==='vertinamas'?'vertinimas':'sandoris'}${o.pask?' · '+o.pask:''}</td></tr>
@@ -223,7 +222,6 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     <tr><td style="color:#777;padding:2px 10px 2px 0">Šaltinis</td><td>${o.nr||''}<br><span style="color:#777">${o.vert||''}</span></td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">Tikslumas</td><td>${(o.geo||'–').replace('!',' (abejotina)')}</td></tr></table><div class="admin-only" style="margin-top:8px"><button class="delbtn" onclick="__del('o',${o.id})">Trinti objektą</button>${o.aid?`<button class="delbtn" onclick="__del('a',${o.aid})">Trinti visą ataskaitą</button>`:''}</div></div>`;
   for(const o of D){ if(o.lat==null) continue; L.circleMarker([o.lat,o.lon],{radius:4.5,color:'#666',weight:1,fillColor:'#aaa',fillOpacity:.7,bubblingMouseEvents:false}).bindPopup(popup(o),{maxWidth:320}).addTo(allLayer); }
-  map.on('click',e=>{ setCenter(e.latlng.lat,e.latlng.lng,'pažymėta žemėlapyje'); $('q').value=`${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`; run(); });
 
   // ---- centras: adreso paieška bazėje arba koordinatės
   let center=null;
@@ -231,9 +229,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const norm=s=>s.toLowerCase().replace(/[ąčęėįšųūž]/g,ch=>({ą:'a',č:'c',ę:'e',ė:'e',į:'i',š:'s',ų:'u',ū:'u',ž:'z'}[ch]));
   function setCenter(lat,lon,label){ center={lat,lon}; $('center').textContent=`${label?label+' · ':''}${lat.toFixed(5)}, ${lon.toFixed(5)}`;
     if(centerMarker) centerMarker.setLatLng([lat,lon]); else centerMarker=L.marker([lat,lon]).addTo(map);
-    const r=parseFloat($('r').value)*1000||5000;
-    if(circle) circle.setLatLng([lat,lon]).setRadius(r); else circle=L.circle([lat,lon],{radius:r,color:'#0e6e73',weight:1,fillOpacity:.04,interactive:false}).addTo(map);
-    map.fitBounds(circle.getBounds(),{padding:[10,10]}); }
+    map.setView([lat,lon],Math.max(map.getZoom(),15)); }
   let geoTimer=null;
   async function nominatim(q){ try{ const r=await fetch('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:q+', Lietuva',format:'jsonv2',limit:5,countrycodes:'lt'}),{headers:{'accept-language':'lt'}}); return (await r.json()).map(x=>({adr:x.display_name.split(', ').slice(0,4).join(', '),lat:+x.lat,lon:+x.lon,geo:'OSM: '+x.type,n:0,osm:true})); }catch(e){ return []; } }
   const sugg=$('sugg'); let act=-1, items=[];
@@ -259,10 +255,11 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   // ---- paieška
   const R=6371000;
   function dist(lat1,lon1,lat2,lon2){const p=Math.PI/180,dLat=(lat2-lat1)*p,dLon=(lon2-lon1)*p,a=Math.sin(dLat/2)**2+Math.cos(lat1*p)*Math.cos(lat2*p)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(a));}
-  let res=[], sortKey='dist', sortDir=1;
+  const TMAX=500, MMAX=2000;
+  let res=[], sortKey='d', sortDir=-1;
   function run(){
-    if(!center){ $('tablewrap').innerHTML='<div class="empty">Pasirinkite centrą: įveskite adresą iš bazės arba koordinates.</div>'; return; }
-    const tipas=$('tipas').value, r=parseFloat($('r').value)*1000||3000, men=parseInt($('men').value)||24, vaid=$('vaid').value;
+    const bnds=map.getBounds();
+    const tipas=$('tipas').value, men=parseInt($('men').value)||24, vaid=$('vaid').value;
     const pl1=parseFloat($('pl1').value), pl2=parseFloat($('pl2').value), sm1=parseInt($('sm1').value)||1890, sm2=parseInt($('sm2').value)||DEFSM2, smDef=(sm1<=1890&&sm2>=DEFSM2), tik=$('tik').checked, nuoma=$('nuoma').checked;
     const minDate=new Date(); minDate.setMonth(minDate.getMonth()-men); const minD=minDate.toISOString().slice(0,10);
     res=[];
@@ -278,8 +275,8 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
       if(!isNaN(pl1)&&(o.pl==null||o.pl<pl1)) continue;
       if(!isNaN(pl2)&&(o.pl==null||o.pl>pl2)) continue;
       if(o.sm==null){ if(!smDef) continue; } else if(o.sm<sm1||o.sm>sm2) continue;
-      const dd=dist(center.lat,center.lon,o.lat,o.lon); if(dd>r) continue;
-      res.push(Object.assign({dist:dd},o));
+      if(!bnds.contains([o.lat,o.lon])) continue;
+      res.push(o);
     }
     render();
   }
@@ -294,23 +291,23 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
       ['Kvartiliai',vk.length?`${fmt(quant(vk,.25))}–${fmt(quant(vk,.75))}`:'–','25 % – 75 %'],
       ['Laikotarpis',dates.length?`${dates[0].slice(0,7)} … ${dates[dates.length-1].slice(0,7)}`:'–','sandorių datos'],
     ].map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
-    const cols=[['dist','Atst.','num'],['d','Vertės / sandorio data',''],['v','',''],['t','Tipas',''],['adr','Adresas','adr'],['pl','Plotas','num'],['k','Kaina €','num'],['vk','Vnt. kaina','num'],['sm','Statyta','num'],['geo','Tikslumas',''],['nr','Ataskaita','']];
+    const cols=[['d','Vertės / sandorio data',''],['v','',''],['t','Tipas',''],['adr','Adresas','adr'],['pl','Plotas','num'],['k','Kaina €','num'],['vk','Vnt. kaina','num'],['sm','Statyta','num'],['geo','Tikslumas',''],['nr','Ataskaita','']];
     const sorted=[...res].sort((a,b)=>{const x=a[sortKey],y=b[sortKey]; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir;});
     if(!$('vert').checked){ $('tablewrap').innerHTML='<div class="empty">Turto vertinimai išjungti (varnelė viršuje kairėje).</div>'; draw(); return; }
     if(!res.length){ $('tablewrap').innerHTML='<div class="empty">Nieko nerasta pagal filtrus. Pilki taškai žemėlapyje – kiti bazės objektai: padidinkite spindulį ar laikotarpį, pakeiskite tipą arba išjunkite „tik tikslios koordinatės“.</div>'; draw(); return; }
     $('tablewrap').innerHTML=`<table><thead><tr>${cols.map(([k,l,c])=>`<th class="${c} ${sortKey===k?'sorted':''}" data-k="${k}">${l}${sortKey===k?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${
-      sorted.map(o=>`<tr><td class="num">${o.dist<1000?Math.round(o.dist)+' m':(o.dist/1000).toFixed(1)+' km'}</td><td>${fdate(o)}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}${o.pog?`<br><small style="color:var(--muted)">${o.pog}</small>`:''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small><div class="admin-only"><button class="delbtn" onclick="__del('o',${o.id})">objektą</button><button class="delbtn" onclick="__del('a',${o.aid})">ataskaitą</button></div></td></tr>`).join('')}</tbody></table>`;
+      sorted.slice(0,TMAX).map(o=>`<tr><td>${fdate(o)}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}${o.pog?`<br><small style="color:var(--muted)">${o.pog}</small>`:''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small><div class="admin-only"><button class="delbtn" onclick="__del('o',${o.id})">objektą</button><button class="delbtn" onclick="__del('a',${o.aid})">ataskaitą</button></div></td></tr>`).join('')}</tbody></table>${res.length>TMAX?`<div class="empty" style="padding:10px">Lentelėje rodomi pirmi ${TMAX} iš ${fmt(res.length)} – priartinkite žemėlapį.</div>`:''}`;
     $('tablewrap').querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;} render();}));
     draw();
   }
   let draw=function(){
     resLayer.clearLayers(); const ids=new Set(res.map(o=>o.id));
-    for(const o of res){ const col=o.v==='vertinamas'?'#c47a00':'#0e6e73';
+    for(const o of res.slice(0,MMAX)){ const col=o.v==='vertinamas'?'#c47a00':'#0e6e73';
       L.circleMarker([o.lat,o.lon],{radius:7,color:'#fff',weight:1.5,fillColor:col,fillOpacity:.95,bubblingMouseEvents:false,pane:'res'}).bindPopup(popup(o),{maxWidth:320}).addTo(resLayer); }
-    if(circle&&center) circle.setRadius(parseFloat($('r').value)*1000||3000);
   };
   $('go').addEventListener('click',run);
-  ['tipas','pog','r','men','vaid','pl1','pl2','sm1','sm2','tik','nuoma','vyst','vert'].forEach(id=>$(id).addEventListener('change',()=>center&&run()));
+  ['tipas','pog','men','vaid','pl1','pl2','sm1','sm2','tik','nuoma','vyst','vert'].forEach(id=>$(id).addEventListener('change',run));
+  let mvT=null; map.on('moveend',()=>{ clearTimeout(mvT); mvT=setTimeout(run,250); });
 
   // ---- pogrupiai pagal tipą
   const POG=(()=>{const m={}; for(const o of D){ if(!o.pog) continue; (m[o.t]=m[o.t]||new Set()).add(o.pog); } return m;})();
@@ -325,7 +322,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     const lais=p.units.filter(x=>!/parduot|rezerv/i.test(x.statusas||'')); p.n=p.units.length; p.nl=lais.length; p.stad=p.units.length?null:((items[0]||{}).statusas||null); p.kmin=ks.length?Math.min(...ks):null; p.kmax=ks.length?Math.max(...ks):null; p.vmin=vk.length?Math.min(...vk):null; p.vmax=vk.length?Math.max(...vk):null; p.pmin=pl.length?Math.min(...pl):null; p.pmax=pl.length?Math.max(...pl):null; p.vmed=vk.length?quant(vk,.5):null; p.nopr=p.kmin==null; const rs=(items.map(x=>x.statusas).find(x=>/^(Statomas|Pastatytas|Planuojamas)$/.test(x||''))); p.stage=items.map(x=>x.projekto_busena).find(Boolean)||rs||(p.nopr?'Planuojamas':'Statomas'); p.metai=((items.map(x=>(x.privalumai||'').match(/Statybų metai:\s*(\d{4})/)).find(Boolean)||[])[1])||null; p.stad=p.units.length?null:p.stage; p.data=items.map(x=>(x.nuskaityta||'').slice(0,10)).filter(Boolean).sort().pop()||null; return p; };
   const BASE=[...PR.values()];
   const itemOk=(x,f)=>{ // tipas
-    if(f.tipas&&x.tipas!==f.tipas) return false;
+    if(f.tipas&&(x.tipas==='projektas'?'butas':x.tipas)!==f.tipas) return false;
     if(f.pog) return false; // pogrupiai taikomi tik vertinimų bazei
     // plotas (intervalų sankirta)
     const lo=+(x.plotas_nuo||x.plotas)||null, hi=+(x.plotas_iki||x.plotas)||null;
@@ -346,13 +343,13 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     <tr><td style="color:#777;padding:2px 10px 2px 0">Šaltinis</td><td>${p.portalas}</td></tr><tr><td style="color:#777;padding:2px 10px 2px 0">Kainų data</td><td>${p.data||'–'}</td></tr></table><div class="admin-only" style="margin-top:6px"><button class="delbtn" onclick="__del('p','${encodeURIComponent(p.portalas)}','${encodeURIComponent(p.projektas)}')">Trinti projektą</button></div><div style="margin-top:8px">${unitsTbl(p,200)}</div></div>`;
   function drawVyst(){
     vystLayer.clearLayers(); const on=$('vyst').checked; $('vystwrap').hidden=!on; if(!on) return;
-    const r=parseFloat($('r').value)*1000||5000; const list=[];
+    const list=[];
     const f={tipas:$('tipas').value,pog:$('pog').value,pl1:parseFloat($('pl1').value),pl2:parseFloat($('pl2').value),sm1:parseInt($('sm1').value)||1890,sm2:parseInt($('sm2').value)||DEFSM2};
-    for(const b of BASE){ if(b.lat==null) continue; const its=b.items.filter(x=>itemOk(x,f)); if(!its.length) continue; const p=mk(b,its); const dd=center?dist(center.lat,center.lon,p.lat,p.lon):0; p.dist=dd;
+    for(const b of BASE){ if(b.lat==null) continue; const its=b.items.filter(x=>itemOk(x,f)); if(!its.length) continue; const p=mk(b,its); const inV=map.getBounds().contains([p.lat,p.lon]);
       L.marker([p.lat,p.lon],{pane:'res',icon:L.divIcon({className:'',html:`<div style="width:16px;height:16px;background:${p.nopr?'#555':'#1a9a4a'};border:2px solid #fff;border-radius:3px;transform:rotate(45deg);box-shadow:0 0 3px #0008"></div>`,iconSize:[16,16],iconAnchor:[8,8]})}).bindPopup(pPopup(p),{maxWidth:460,minWidth:380}).addTo(vystLayer);
-      if(!center||dd<=r) list.push(p); }
-    list.sort((a,b)=>(a.dist||0)-(b.dist||0));
-    $('vystwrap').innerHTML=list.length?`<table><thead><tr><th class="num">Atst.</th><th>Data</th><th></th><th>Tipas</th><th class="adr">Adresas</th><th class="num">Plotas</th><th class="num">Kaina €</th><th class="num">Vnt. kaina</th><th class="num">Statyta</th><th>Tikslumas</th><th>Ataskaita</th></tr></thead><tbody>${list.map((p,i)=>`<tr class="prow" data-i="${i}" style="cursor:pointer"><td class="num">${center?(p.dist<1000?Math.round(p.dist)+' m':(p.dist/1000).toFixed(1)+' km'):'–'}</td><td style="white-space:nowrap">${p.data||'–'}</td><td><span class="pill subj">${p.stage}</span></td><td>${p.tipas_t||'butas'}</td><td class="adr"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${p.nopr?'#555':'#1a9a4a'};margin-right:5px"></span><b>▸ ${p.projektas}</b>${p.adresas?`<br><small style="color:var(--muted)">${p.adresas}</small>`:''}${p.n?`<br><small style="color:var(--muted)">${p.n} butų, laisvų ${p.nl}</small>`:''}</td><td class="num">${p.pmin!=null?rng(p.pmin,p.pmax,0)+' m²':'–'}</td><td class="num">${p.kmin?rng(p.kmin,p.kmax):'–'}</td><td class="num">${p.vmin?rng(p.vmin,p.vmax)+' <small>EUR/m2</small>':'–'}</td><td class="num">${p.metai||'–'}</td><td><span class="pill">projektas</span></td><td>${p.portalas}<br><small style="color:var(--muted)">${p.vystytojas||''}</small><div class="admin-only"><button class="delbtn" onclick="event.stopPropagation();__del('p','${encodeURIComponent(p.portalas)}','${encodeURIComponent(p.projektas)}')">trinti projektą</button></div></td></tr><tr class="pdet" id="pdet${i}" hidden><td colspan="11" style="background:var(--bg)">${unitsTbl(p,320)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Vystytojų projektų šiame spinduliu nėra.</div>';
+      if(inV) list.push(p); }
+    list.sort((a,b)=>a.projektas.localeCompare(b.projektas,'lt'));
+    $('vystwrap').innerHTML=list.length?`<table><thead><tr><th>Data</th><th></th><th>Tipas</th><th class="adr">Adresas</th><th class="num">Plotas</th><th class="num">Kaina €</th><th class="num">Vnt. kaina</th><th class="num">Statyta</th><th>Tikslumas</th><th>Ataskaita</th></tr></thead><tbody>${list.map((p,i)=>`<tr class="prow" data-i="${i}" style="cursor:pointer"><td style="white-space:nowrap">${p.data||'–'}</td><td><span class="pill subj">${p.stage}</span></td><td>${p.tipas_t||'butas'}</td><td class="adr"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${p.nopr?'#555':'#1a9a4a'};margin-right:5px"></span><b>▸ ${p.projektas}</b>${p.adresas?`<br><small style="color:var(--muted)">${p.adresas}</small>`:''}${p.n?`<br><small style="color:var(--muted)">${p.n} butų, laisvų ${p.nl}</small>`:''}</td><td class="num">${p.pmin!=null?rng(p.pmin,p.pmax,0)+' m²':'–'}</td><td class="num">${p.kmin?rng(p.kmin,p.kmax):'–'}</td><td class="num">${p.vmin?rng(p.vmin,p.vmax)+' <small>EUR/m2</small>':'–'}</td><td class="num">${p.metai||'–'}</td><td><span class="pill">projektas</span></td><td>${p.portalas}<br><small style="color:var(--muted)">${p.vystytojas||''}</small><div class="admin-only"><button class="delbtn" onclick="event.stopPropagation();__del('p','${encodeURIComponent(p.portalas)}','${encodeURIComponent(p.projektas)}')">trinti projektą</button></div></td></tr><tr class="pdet" id="pdet${i}" hidden><td colspan="10" style="background:var(--bg)">${unitsTbl(p,320)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Vystytojų projektų šiame spinduliu nėra.</div>';
     $('vystwrap').querySelectorAll('.prow').forEach(tr=>tr.addEventListener('click',e=>{ if(e.target.closest('a')) return; const d=$('pdet'+tr.dataset.i); d.hidden=!d.hidden; const b=tr.querySelector('b'); b.textContent=b.textContent.replace(/^[▸▾] /,'')&&(d.hidden?'▸ ':'▾ ')+b.textContent.replace(/^[▸▾] /,''); }));
   }
   const _draw=draw; draw=function(){ _draw(); drawVyst(); };
@@ -381,6 +378,6 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   renderSav();
 
   // pradinė būsena: Kauno centras
-  setCenter(54.8972,23.9120,'Kaunas, Laisvės al.'); $('q').value='Kaunas, Laisvės al.'; run();
+  map.setView([54.8972,23.9120],13); run();
 })();
 </script></body></html>
