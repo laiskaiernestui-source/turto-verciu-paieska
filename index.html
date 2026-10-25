@@ -103,8 +103,12 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
 <div class="layout">
   <aside class="panel controls">
     <div class="check"><input type="checkbox" id="vyst" checked><label for="vyst" style="margin:0"><b>Vystomi projektai</b><br><small style="color:var(--muted)">(nauji projektai)</small></label></div>
-    <div class="check" style="margin:-4px 0 4px 22px"><input type="checkbox" id="tikkain"><label for="tikkain" style="margin:0">Tik su kainomis</label></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px 22px;font-size:12px"><label style="display:flex;align-items:center;gap:5px;margin:0;color:var(--fg)"><input type="checkbox" id="st_pl" checked style="width:auto;margin:0">Planuojamas</label><label style="display:flex;align-items:center;gap:5px;margin:0;color:var(--fg)"><input type="checkbox" id="st_st" checked style="width:auto;margin:0">Parduodamas</label><label style="display:flex;align-items:center;gap:5px;margin:0;color:var(--fg)"><input type="checkbox" id="st_pa" checked style="width:auto;margin:0">Užbaigtas</label></div>
+    <div class="check" style="margin:-4px 0 6px 22px"><input type="checkbox" id="tikkain"><label for="tikkain" style="margin:0">Tik su kainomis</label></div>
+    <div style="margin:0 0 10px 22px">
+      <div class="check" style="margin-bottom:6px"><input type="checkbox" id="st_pl" checked><label for="st_pl" style="margin:0">Planuojamas</label></div>
+      <div class="check" style="margin-bottom:6px"><input type="checkbox" id="st_st" checked><label for="st_st" style="margin:0">Parduodamas</label></div>
+      <div class="check" style="margin-bottom:0"><input type="checkbox" id="st_pa" checked><label for="st_pa" style="margin:0">Užbaigtas</label></div>
+    </div>
     <div class="check" style="margin-bottom:14px"><input type="checkbox" id="vert"><label for="vert" style="margin:0"><b>Turto vertinimai</b> <small style="color:var(--muted)">(vertinimai ir sandoriai)</small></label></div>
     <h2>Rasti adresą žemėlapyje</h2>
     <div class="field sugg">
