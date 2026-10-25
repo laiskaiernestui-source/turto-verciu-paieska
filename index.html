@@ -292,8 +292,19 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const vystLayer=L.layerGroup().addTo(map);
   const PR=new Map();
   for(const s of S){ const k=(s.portalas||'')+'|'+s.projektas; if(!PR.has(k)) PR.set(k,{k,portalas:s.portalas,projektas:s.projektas,vystytojas:s.vystytojas,adresas:s.adresas,lat:s.lat,lon:s.lon,items:[]}); PR.get(k).items.push(s); }
-  const PRJ=[...PR.values()].map(p=>{ p.units=p.items.filter(x=>x.butas_nr!=='projektas'); p.url=(p.items.find(x=>x.butas_nr==='projektas')||{}).url||null; const ks=p.items.flatMap(x=>[+x.kaina,+x.kaina_nuo,+x.kaina_iki]).filter(x=>x>0), vk=p.units.map(x=>+x.vnt_kaina).filter(x=>x>0), pl=p.items.flatMap(x=>[+x.plotas,+x.plotas_nuo,+x.plotas_iki]).filter(x=>x>0);
-    const lais=p.units.filter(x=>!/parduot|rezerv/i.test(x.statusas||'')); p.n=p.units.length; p.nl=lais.length; p.stad=p.units.length?null:((p.items[0]||{}).statusas||null); p.kmin=ks.length?Math.min(...ks):null; p.kmax=ks.length?Math.max(...ks):null; p.vmin=vk.length?Math.min(...vk):null; p.vmax=vk.length?Math.max(...vk):null; p.pmin=pl.length?Math.min(...pl):null; p.pmax=pl.length?Math.max(...pl):null; p.vmed=vk.length?quant(vk,.5):null; p.data=p.items.map(x=>(x.nuskaityta||'').slice(0,10)).filter(Boolean).sort().pop()||null; return p; });
+  const mk=(b,items)=>{ const p={...b,items}; p.units=items.filter(x=>x.butas_nr!=='projektas'); p.url=(b.items.find(x=>x.butas_nr==='projektas')||{}).url||null; const ks=items.flatMap(x=>[+x.kaina,+x.kaina_nuo,+x.kaina_iki]).filter(x=>x>0), vk=p.units.map(x=>+x.vnt_kaina).filter(x=>x>0), pl=items.flatMap(x=>[+x.plotas,+x.plotas_nuo,+x.plotas_iki]).filter(x=>x>0);
+    const lais=p.units.filter(x=>!/parduot|rezerv/i.test(x.statusas||'')); p.n=p.units.length; p.nl=lais.length; p.stad=p.units.length?null:((items[0]||{}).statusas||null); p.kmin=ks.length?Math.min(...ks):null; p.kmax=ks.length?Math.max(...ks):null; p.vmin=vk.length?Math.min(...vk):null; p.vmax=vk.length?Math.max(...vk):null; p.pmin=pl.length?Math.min(...pl):null; p.pmax=pl.length?Math.max(...pl):null; p.vmed=vk.length?quant(vk,.5):null; p.data=items.map(x=>(x.nuskaityta||'').slice(0,10)).filter(Boolean).sort().pop()||null; return p; };
+  const BASE=[...PR.values()];
+  const itemOk=(x,f)=>{ // tipas
+    if(f.tipas&&x.tipas!==f.tipas) return false;
+    if(f.pog) return false; // pogrupiai taikomi tik vertinimų bazei
+    // plotas (intervalų sankirta)
+    const lo=+(x.plotas_nuo||x.plotas)||null, hi=+(x.plotas_iki||x.plotas)||null;
+    if(!isNaN(f.pl1)&&hi!=null&&hi<f.pl1) return false; if(!isNaN(f.pl1)&&hi==null) return false;
+    if(!isNaN(f.pl2)&&lo!=null&&lo>f.pl2) return false; if(!isNaN(f.pl2)&&lo==null) return false;
+    // statybos metai: nenurodyti = nauja statyba (šie metai)
+    const m=(x.privalumai||'').match(/Statybų metai:\s*(\d{4})/); const y=m?+m[1]:new Date().getFullYear();
+    return y>=f.sm1&&y<=f.sm2; };
   const rng=(a,b,d=0)=>a==null?'–':(a===b?fmt(a,d):fmt(a,d)+' – '+fmt(b,d));
   const stCol=st=>/parduot/i.test(st||'')?'#999':/rezerv/i.test(st||'')?'#c47a00':'#1a7f37';
   const unitsTbl=(p,mw)=>{ if(!p.units.length) return `<div style="font-size:12px;color:#777">Atskirų butų šaltinis nepateikia${p.stad?' (projekto būklė: '+p.stad+')':''}.${p.url?` <a href="${p.url}" target="_blank" rel="noopener">Projekto puslapis</a>`:''}</div>`; const it=[...p.units].sort((a,b)=>(a.aukstas||0)-(b.aukstas||0)||(+a.plotas||0)-(+b.plotas||0)); return `<div style="max-height:${mw}px;overflow:auto"><table style="font-size:12px;border-collapse:collapse;width:100%"><thead><tr style="text-align:left;color:#777"><th>Butas</th><th>Aukšt.</th><th>Kamb.</th><th>m²</th><th style="text-align:right">Kaina €</th><th style="text-align:right">€/m²</th><th>Statusas</th><th>Data</th></tr></thead><tbody>${it.map(x=>{const vk=x.vnt_kaina||(x.kaina&&x.plotas?Math.round(x.kaina/x.plotas):null); return `<tr><td>${x.url?`<a href="${x.url}" target="_blank" rel="noopener">${(x.korpusas&&x.korpusas!=='-'?x.korpusas+'-':'')+(x.butas_nr||'')}</a>`:(x.butas_nr||'')}</td><td>${x.aukstas??'–'}</td><td>${x.kambariai??'–'}</td><td>${x.plotas!=null?fmt(+x.plotas,1):'–'}</td><td style="text-align:right">${x.kaina?fmt(+x.kaina)+(x.kaina_nuolaida?`<br><small style="color:#1a7f37">${fmt(+x.kaina_nuolaida)} su nuolaida</small>`:''):'–'}</td><td style="text-align:right">${vk?fmt(+vk):'–'}</td><td style="color:${stCol(x.statusas)}">${x.statusas||'–'}${x.privalumai?`<br><small style="color:#777">${x.privalumai}</small>`:''}</td><td style="white-space:nowrap">${(x.nuskaityta||'').slice(0,10)||'–'}</td></tr>`;}).join('')}</tbody></table></div>`; };
@@ -307,7 +318,8 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   function drawVyst(){
     vystLayer.clearLayers(); const on=$('vyst').checked; $('vystwrap').hidden=!on; if(!on) return;
     const r=parseFloat($('r').value)*1000||5000; const list=[];
-    for(const p of PRJ){ if(p.lat==null) continue; const dd=center?dist(center.lat,center.lon,p.lat,p.lon):0; p.dist=dd;
+    const f={tipas:$('tipas').value,pog:$('pog').value,pl1:parseFloat($('pl1').value),pl2:parseFloat($('pl2').value),sm1:parseInt($('sm1').value)||1890,sm2:parseInt($('sm2').value)||DEFSM2};
+    for(const b of BASE){ if(b.lat==null) continue; const its=b.items.filter(x=>itemOk(x,f)); if(!its.length) continue; const p=mk(b,its); const dd=center?dist(center.lat,center.lon,p.lat,p.lon):0; p.dist=dd;
       L.marker([p.lat,p.lon],{pane:'res',icon:L.divIcon({className:'',html:'<div style="width:16px;height:16px;background:#d6336c;border:2px solid #fff;border-radius:3px;transform:rotate(45deg);box-shadow:0 0 3px #0008"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).bindPopup(pPopup(p),{maxWidth:460,minWidth:380}).addTo(vystLayer);
       if(!center||dd<=r) list.push(p); }
     list.sort((a,b)=>(a.dist||0)-(b.dist||0));
