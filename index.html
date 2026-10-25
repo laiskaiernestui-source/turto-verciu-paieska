@@ -90,6 +90,8 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
 <section id="view-paieska">
 <div class="layout">
   <aside class="panel controls">
+    <div class="check"><input type="checkbox" id="vyst"><label for="vyst" style="margin:0"><b>Vystytojų skelbimai</b> <small style="color:var(--muted)">(naujos statybos, pardavimo kainos)</small></label></div>
+    <div class="check" style="margin-bottom:14px"><input type="checkbox" id="vert" checked><label for="vert" style="margin:0"><b>Turto vertinimai</b> <small style="color:var(--muted)">(vertinimai ir sandoriai)</small></label></div>
     <h2>Paieškos centras</h2>
     <div class="field sugg">
       <label for="q">Adresas (bet koks LT adresas) arba „platuma, ilguma“</label>
@@ -117,7 +119,6 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     </div>
     <div class="check"><input type="checkbox" id="tik" checked><label for="tik" style="margin:0">Tik tikslios koordinatės (adresas/gatvė)</label></div>
     <div class="check"><input type="checkbox" id="nuoma"><label for="nuoma" style="margin:0">Įtraukti nuomos įrašus</label></div>
-    <div class="check"><input type="checkbox" id="vyst"><label for="vyst" style="margin:0">Vystytojų skelbimai (naujos statybos, pardavimo kainos)</label></div>
     <button class="primary" id="go">Ieškoti</button>
     <p class="note">Centrą galite nurodyti ir spustelėję žemėlapyje. Kaimų lygmens įrašai (gyvenvietė) rodomi tik išjungus „tik tikslios“.</p>
   </aside>
@@ -265,6 +266,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     const pl1=parseFloat($('pl1').value), pl2=parseFloat($('pl2').value), sm1=parseInt($('sm1').value)||1890, sm2=parseInt($('sm2').value)||DEFSM2, smDef=(sm1<=1890&&sm2>=DEFSM2), tik=$('tik').checked, nuoma=$('nuoma').checked;
     const minDate=new Date(); minDate.setMonth(minDate.getMonth()-men); const minD=minDate.toISOString().slice(0,10);
     res=[];
+    if(!$('vert').checked){ render(); return; }
     for(const o of D){
       if(o.lat==null) continue;
       if(tipas&&o.t!==tipas) continue;
@@ -294,6 +296,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     ].map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
     const cols=[['dist','Atst.','num'],['d','Vertės / sandorio data',''],['v','',''],['t','Tipas',''],['adr','Adresas','adr'],['pl','Plotas','num'],['k','Kaina €','num'],['vk','Vnt. kaina','num'],['sm','Statyta','num'],['geo','Tikslumas',''],['nr','Ataskaita','']];
     const sorted=[...res].sort((a,b)=>{const x=a[sortKey],y=b[sortKey]; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir;});
+    if(!$('vert').checked){ $('tablewrap').innerHTML='<div class="empty">Turto vertinimai išjungti (varnelė viršuje kairėje).</div>'; draw(); return; }
     if(!res.length){ $('tablewrap').innerHTML='<div class="empty">Nieko nerasta pagal filtrus. Pilki taškai žemėlapyje – kiti bazės objektai: padidinkite spindulį ar laikotarpį, pakeiskite tipą arba išjunkite „tik tikslios koordinatės“.</div>'; draw(); return; }
     $('tablewrap').innerHTML=`<table><thead><tr>${cols.map(([k,l,c])=>`<th class="${c} ${sortKey===k?'sorted':''}" data-k="${k}">${l}${sortKey===k?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${
       sorted.map(o=>`<tr><td class="num">${o.dist<1000?Math.round(o.dist)+' m':(o.dist/1000).toFixed(1)+' km'}</td><td>${fdate(o)}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}${o.pog?`<br><small style="color:var(--muted)">${o.pog}</small>`:''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small><div class="admin-only"><button class="delbtn" onclick="__del('o',${o.id})">objektą</button><button class="delbtn" onclick="__del('a',${o.aid})">ataskaitą</button></div></td></tr>`).join('')}</tbody></table>`;
@@ -307,7 +310,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     if(circle&&center) circle.setRadius(parseFloat($('r').value)*1000||3000);
   };
   $('go').addEventListener('click',run);
-  ['tipas','pog','r','men','vaid','pl1','pl2','sm1','sm2','tik','nuoma','vyst'].forEach(id=>$(id).addEventListener('change',()=>center&&run()));
+  ['tipas','pog','r','men','vaid','pl1','pl2','sm1','sm2','tik','nuoma','vyst','vert'].forEach(id=>$(id).addEventListener('change',()=>center&&run()));
 
   // ---- pogrupiai pagal tipą
   const POG=(()=>{const m={}; for(const o of D){ if(!o.pog) continue; (m[o.t]=m[o.t]||new Set()).add(o.pog); } return m;})();
@@ -354,6 +357,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   }
   const _draw=draw; draw=function(){ _draw(); drawVyst(); };
   $('vyst').addEventListener('change',drawVyst);
+  $('vert').addEventListener('change',()=>{ if($('vert').checked) allLayer.addTo(map); else map.removeLayer(allLayer); });
 
   // ---- savivaldybių suvestinė
   function renderSav(){
