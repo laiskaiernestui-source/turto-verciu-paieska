@@ -286,7 +286,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   map.createPane('res'); map.getPane('res').style.zIndex=650;
   const eox=L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg',{maxZoom:14,attribution:'Sentinel-2 cloudless by EOX'});
   const gsat=L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:'0123',attribution:'Imagery © Google'});
-  L.control.layers({'Kartografinis':osm,'Palydovinis':L.layerGroup([gsat,lbl]),'Palydovinis (Sentinel-2)':L.layerGroup([eox,lbl])},{},{collapsed:false}).addTo(map);
+  L.control.layers({'Kartografinis':osm,'Palydovinis':gsat},{},{collapsed:false}).addTo(map);
   L.control.scale({imperial:false}).addTo(map);
   const allLayer=L.layerGroup().addTo(map), resLayer=L.layerGroup().addTo(map); let centerMarker=null;
   const popup=o=>`<div style="min-width:220px"><b style="font-size:13px">${o.adr||'Adresas nuasmenintas'}</b>
