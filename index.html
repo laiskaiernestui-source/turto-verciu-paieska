@@ -68,7 +68,9 @@ label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;letter-s
 .dual input[type=range]{position:absolute;left:0;top:0;width:100%;height:26px;margin:0;padding:0;border:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none;outline:none}
 .dual input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line)}
 .dual input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--accent);margin-top:-6px;cursor:pointer}
+.dual input[type=range]:last-of-type::-webkit-slider-runnable-track{background:transparent}
 .dual input[type=range]::-moz-range-track{height:2px;background:var(--line)}
+.dual input[type=range]:last-of-type::-moz-range-track{background:transparent}
 .dual input[type=range]::-moz-range-thumb{pointer-events:auto;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--panel);cursor:pointer}
 .dual input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--accent);outline-offset:2px}
 input,select,button{font:inherit;color:inherit}
