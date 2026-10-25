@@ -100,6 +100,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     <div class="row2">
       <div class="field"><label for="tipas">Tipas</label>
         <select id="tipas"><option value="butas">Butas</option><option value="zemes_sklypas">Žemės sklypas</option><option value="pastatas">Pastatas</option><option value="patalpos">Patalpos</option><option value="kompleksas">Kompleksas</option><option value="">Visi</option></select></div>
+      <div class="field"><label for="pog">Pogrupis</label><select id="pog"><option value="">Visi</option></select></div>
       <div class="field"><label for="r">Spindulys, km</label><input type="number" id="r" value="5" min="0.2" step="0.5"></div>
     </div>
     <div class="row2">
@@ -113,6 +114,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     </div>
     <div class="check"><input type="checkbox" id="tik" checked><label for="tik" style="margin:0">Tik tikslios koordinatės (adresas/gatvė)</label></div>
     <div class="check"><input type="checkbox" id="nuoma"><label for="nuoma" style="margin:0">Įtraukti nuomos įrašus</label></div>
+    <div class="check"><input type="checkbox" id="vyst"><label for="vyst" style="margin:0">Vystytojų skelbimai (naujos statybos, pardavimo kainos)</label></div>
     <button class="primary" id="go">Ieškoti</button>
     <p class="note">Centrą galite nurodyti ir spustelėję žemėlapyje. Kaimų lygmens įrašai (gyvenvietė) rodomi tik išjungus „tik tikslios“.</p>
   </aside>
@@ -122,9 +124,12 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     <div class="split">
       <div class="panel" style="padding:8px">
         <div id="map" style="height:520px;border-radius:6px;z-index:0"></div>
-        <div class="legend"><span><i style="background:#0e6e73"></i>sandoris</span><span><i style="background:#c47a00"></i>vertinimas</span><span><i style="background:#999"></i>kiti objektai (už spindulio / be filtro)</span><span>Spustelėkite žemėlapyje – naujas centras</span></div>
+        <div class="legend"><span><i style="background:#0e6e73"></i>sandoris</span><span><i style="background:#c47a00"></i>vertinimas</span><span><i style="background:#d6336c;border-radius:2px"></i>vystytojų projektas</span><span><i style="background:#999"></i>kiti objektai (už spindulio / be filtro)</span><span>Spustelėkite žemėlapyje – naujas centras</span></div>
       </div>
+      <div>
       <div class="tablewrap" id="tablewrap" style="max-height:420px;overflow:auto"><div class="empty">Kraunama…</div></div>
+      <div class="tablewrap" id="vystwrap" style="max-height:300px;overflow:auto;margin-top:12px" hidden></div>
+      </div>
     </div>
   </div>
 </div>
@@ -149,9 +154,9 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const TIPAI={butas:'butas',zemes_sklypas:'sklypas',pastatas:'pastatas',patalpos:'patalpos',kompleksas:'kompleksas',kita:'kita',inzineriniai:'inžin.'};
   const SB='https://zbgugliqnjohqbotssgl.supabase.co', KEY='sb_publishable_PpoYli-Lf-OiTJkJVTP15A_fzR58I3D';
   const HDR={apikey:KEY,authorization:'Bearer '+KEY};
-  let D=[];
+  let D=[], S=[];
   try{
-    const sel='id,vaidmuo,tipas,adresas,savivaldybe,data,kaina,vnt_kaina,vnt,plotas,plotas_vnt,statybos_metai,paskirtis,vertes_rusis,geokodavimas,lat,lon,ataskaita_id';
+    const sel='id,vaidmuo,tipas,adresas,savivaldybe,data,kaina,vnt_kaina,vnt,plotas,plotas_vnt,statybos_metai,paskirtis,vertes_rusis,geokodavimas,lat,lon,ataskaita_id,pogrupis';
     for(let off=0;;off+=1000){
       const r=await fetch(`${SB}/rest/v1/objektai?select=${sel}&order=id&offset=${off}&limit=1000`,{headers:HDR}); const page=await r.json();
       if(!Array.isArray(page)) throw new Error(page.message||'klaida');
@@ -162,7 +167,8 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
       const ra=await fetch(`${SB}/rest/v1/ataskaitos?select=id,ataskaitos_nr,vertintojo_imone,saltinis_failas&order=id&offset=${off}&limit=1000`,{headers:HDR}); const pg=await ra.json();
       for(const a of pg) A.set(a.id,a); if(pg.length<1000) break;
     }
-    D=D.map(o=>{const a=A.get(o.ataskaita_id)||{}; return {id:o.id,v:o.vaidmuo,t:o.tipas,adr:o.adresas,sav:o.savivaldybe,d:o.data,k:o.kaina!=null?+o.kaina:null,vk:o.vnt_kaina!=null?+o.vnt_kaina:null,vnt:o.vnt,pl:o.plotas!=null?+o.plotas:null,plv:o.plotas_vnt,sm:o.statybos_metai,pask:o.paskirtis,vr:o.vertes_rusis,geo:(o.geokodavimas||'').replace(';abejotina>60km','!')||null,lat:o.lat,lon:o.lon,nr:a.ataskaitos_nr,vert:a.vertintojo_imone,f:a.saltinis_failas};});
+    D=D.map(o=>{const a=A.get(o.ataskaita_id)||{}; return {id:o.id,v:o.vaidmuo,t:o.tipas,adr:o.adresas,sav:o.savivaldybe,d:o.data,k:o.kaina!=null?+o.kaina:null,vk:o.vnt_kaina!=null?+o.vnt_kaina:null,vnt:o.vnt,pl:o.plotas!=null?+o.plotas:null,plv:o.plotas_vnt,sm:o.statybos_metai,pask:o.paskirtis,vr:o.vertes_rusis,geo:(o.geokodavimas||'').replace(';abejotina>60km','!')||null,lat:o.lat,lon:o.lon,nr:a.ataskaitos_nr,vert:a.vertintojo_imone,f:a.saltinis_failas,pog:o.pogrupis};});
+    try{ for(let off=0;;off+=1000){ const rs=await fetch(`${SB}/rest/v1/skelbimai?select=*&order=id&offset=${off}&limit=1000`,{headers:HDR}); const pg=await rs.json(); if(!Array.isArray(pg)) break; S.push(...pg); if(pg.length<1000) break; } }catch(e){}
     const nGeo=D.filter(o=>o.lat!=null).length;
     $('meta').textContent=`${fmt(D.length)} objektai iš ${fmt(A.size)} vertinimo ataskaitų · ${fmt(nGeo)} su koordinatėmis · gyvi duomenys iš Supabase`;
   }catch(e){ $('meta').textContent='Nepavyko užkrauti duomenų: '+e.message; return; }
@@ -178,7 +184,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   const allLayer=L.layerGroup().addTo(map), resLayer=L.layerGroup().addTo(map); let centerMarker=null, circle=null;
   const popup=o=>`<div style="min-width:220px"><b style="font-size:13px">${o.adr||'Adresas nuasmenintas'}</b>
     <table style="margin-top:6px;font-size:12px;border-collapse:collapse">
-    <tr><td style="color:#777;padding:2px 10px 2px 0">Tipas</td><td>${TIPAI[o.t]||o.t||'–'} · ${o.v==='vertinamas'?'vertinimas':'sandoris'}${o.pask?' · '+o.pask:''}</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Tipas</td><td>${TIPAI[o.t]||o.t||'–'}${o.pog?' / '+o.pog:''} · ${o.v==='vertinamas'?'vertinimas':'sandoris'}${o.pask?' · '+o.pask:''}</td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">Plotas</td><td>${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv==='ha'?'ha':'m²'):'–'}${o.sm?' · statyta '+o.sm:''}</td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">${o.v==='vertinamas'?'Vertė':'Kaina'}</td><td><b>${o.k!=null?fmt(o.k)+' €':'–'}</b>${o.vr==='nuoma'||o.vr==='nuomos'?' /mėn.':''}</td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">Vnt. kaina</td><td><b>${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' '+(o.vnt||''):'–'}</b></td></tr>
@@ -232,6 +238,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     for(const o of D){
       if(o.lat==null) continue;
       if(tipas&&o.t!==tipas) continue;
+      if($('pog').value&&o.pog!==$('pog').value) continue;
       if(vaid&&o.v!==vaid) continue;
       if(!nuoma&&(o.vr==='nuoma'||o.vr==='nuomos')) continue;
       if(tik&&!(o.geo==='adresas'||o.geo==='gatve')) continue;
@@ -257,18 +264,49 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     const sorted=[...res].sort((a,b)=>{const x=a[sortKey],y=b[sortKey]; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir;});
     if(!res.length){ $('tablewrap').innerHTML='<div class="empty">Nieko nerasta pagal filtrus. Pilki taškai žemėlapyje – kiti bazės objektai: padidinkite spindulį ar laikotarpį, pakeiskite tipą arba išjunkite „tik tikslios koordinatės“.</div>'; draw(); return; }
     $('tablewrap').innerHTML=`<table><thead><tr>${cols.map(([k,l,c])=>`<th class="${c} ${sortKey===k?'sorted':''}" data-k="${k}">${l}${sortKey===k?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${
-      sorted.map(o=>`<tr><td class="num">${o.dist<1000?Math.round(o.dist)+' m':(o.dist/1000).toFixed(1)+' km'}</td><td>${o.d?o.d.slice(0,7):'–'}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small></td></tr>`).join('')}</tbody></table>`;
+      sorted.map(o=>`<tr><td class="num">${o.dist<1000?Math.round(o.dist)+' m':(o.dist/1000).toFixed(1)+' km'}</td><td>${o.d?o.d.slice(0,7):'–'}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}${o.pog?`<br><small style="color:var(--muted)">${o.pog}</small>`:''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small></td></tr>`).join('')}</tbody></table>`;
     $('tablewrap').querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;} render();}));
     draw();
   }
-  function draw(){
+  let draw=function(){
     resLayer.clearLayers(); const ids=new Set(res.map(o=>o.id));
     for(const o of res){ const col=o.v==='vertinamas'?'#c47a00':'#0e6e73';
       L.circleMarker([o.lat,o.lon],{radius:7,color:'#fff',weight:1.5,fillColor:col,fillOpacity:.95,bubblingMouseEvents:false,pane:'res'}).bindPopup(popup(o),{maxWidth:320}).addTo(resLayer); }
     if(circle&&center) circle.setRadius(parseFloat($('r').value)*1000||3000);
-  }
+  };
   $('go').addEventListener('click',run);
-  ['tipas','r','men','vaid','pl','tol','tik','nuoma'].forEach(id=>$(id).addEventListener('change',()=>center&&run()));
+  ['tipas','pog','r','men','vaid','pl','tol','tik','nuoma','vyst'].forEach(id=>$(id).addEventListener('change',()=>center&&run()));
+
+  // ---- pogrupiai pagal tipą
+  const POG=(()=>{const m={}; for(const o of D){ if(!o.pog) continue; (m[o.t]=m[o.t]||new Set()).add(o.pog); } return m;})();
+  function fillPog(){ const t=$('tipas').value; const cur=$('pog').value; const arr=t?[...(POG[t]||[])].sort((a,b)=>a==='Kita'?1:b==='Kita'?-1:a.localeCompare(b,'lt')):[]; $('pog').innerHTML='<option value="">Visi</option>'+arr.map(x=>`<option>${x}</option>`).join(''); $('pog').disabled=!arr.length; if(arr.includes(cur)) $('pog').value=cur; }
+  $('tipas').addEventListener('change',fillPog); fillPog();
+
+  // ---- vystytojų skelbimai
+  const vystLayer=L.layerGroup().addTo(map);
+  const PR=new Map();
+  for(const s of S){ const k=(s.portalas||'')+'|'+s.projektas; if(!PR.has(k)) PR.set(k,{k,portalas:s.portalas,projektas:s.projektas,vystytojas:s.vystytojas,adresas:s.adresas,lat:s.lat,lon:s.lon,items:[]}); PR.get(k).items.push(s); }
+  const PRJ=[...PR.values()].map(p=>{ const ks=p.items.map(x=>+x.kaina).filter(x=>x>0), vk=p.items.map(x=>+x.vnt_kaina).filter(x=>x>0), pl=p.items.map(x=>+x.plotas).filter(x=>x>0);
+    const lais=p.items.filter(x=>!/parduot|rezerv/i.test(x.statusas||'')); p.n=p.items.length; p.nl=lais.length; p.kmin=ks.length?Math.min(...ks):null; p.kmax=ks.length?Math.max(...ks):null; p.vmin=vk.length?Math.min(...vk):null; p.vmax=vk.length?Math.max(...vk):null; p.pmin=pl.length?Math.min(...pl):null; p.pmax=pl.length?Math.max(...pl):null; p.vmed=vk.length?quant(vk,.5):null; return p; });
+  const rng=(a,b,d=0)=>a==null?'–':(a===b?fmt(a,d):fmt(a,d)+' – '+fmt(b,d));
+  const pPopup=p=>`<div style="min-width:240px"><b style="font-size:13px">${p.projektas}</b><div style="color:#777;font-size:12px">${p.adresas||''}${p.vystytojas?' · '+p.vystytojas:''}</div>
+    <table style="margin-top:6px;font-size:12px;border-collapse:collapse">
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Butų / laisvų</td><td>${p.n} / ${p.nl}</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Plotas</td><td>${rng(p.pmin,p.pmax,1)} m²</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Kaina</td><td><b>${rng(p.kmin,p.kmax)} €</b></td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">€/m²</td><td><b>${rng(p.vmin,p.vmax)}</b>${p.vmed?' (med. '+fmt(p.vmed)+')':''}</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">Šaltinis</td><td>${p.portalas}</td></tr></table></div>`;
+  function drawVyst(){
+    vystLayer.clearLayers(); const on=$('vyst').checked; $('vystwrap').hidden=!on; if(!on) return;
+    const r=parseFloat($('r').value)*1000||5000; const list=[];
+    for(const p of PRJ){ if(p.lat==null) continue; const dd=center?dist(center.lat,center.lon,p.lat,p.lon):0; p.dist=dd;
+      L.marker([p.lat,p.lon],{pane:'res',icon:L.divIcon({className:'',html:'<div style="width:16px;height:16px;background:#d6336c;border:2px solid #fff;border-radius:3px;transform:rotate(45deg);box-shadow:0 0 3px #0008"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).bindPopup(pPopup(p),{maxWidth:320}).addTo(vystLayer);
+      if(!center||dd<=r) list.push(p); }
+    list.sort((a,b)=>(a.dist||0)-(b.dist||0));
+    $('vystwrap').innerHTML=list.length?`<table><thead><tr><th class="num">Atst.</th><th>Projektas</th><th>Adresas</th><th class="num">Butai (laisvi)</th><th class="num">Plotas m²</th><th class="num">Kaina €</th><th class="num">€/m²</th><th>Šaltinis</th></tr></thead><tbody>${list.map(p=>`<tr><td class="num">${center?(p.dist<1000?Math.round(p.dist)+' m':(p.dist/1000).toFixed(1)+' km'):'–'}</td><td><b>${p.projektas}</b><br><small style="color:var(--muted)">${p.vystytojas||''}</small></td><td class="adr">${p.adresas||''}</td><td class="num">${p.n} (${p.nl})</td><td class="num">${rng(p.pmin,p.pmax,0)}</td><td class="num">${p.kmin?rng(p.kmin,p.kmax):'<small>kaina nepaskelbta</small>'}</td><td class="num">${p.vmin?rng(p.vmin,p.vmax):'–'}</td><td><small>${p.portalas}</small></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Vystytojų projektų šiame spinduliu nėra.</div>';
+  }
+  const _draw=draw; draw=function(){ _draw(); drawVyst(); };
+  $('vyst').addEventListener('change',drawVyst);
 
   // ---- savivaldybių suvestinė
   function renderSav(){
