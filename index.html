@@ -151,6 +151,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
 (async function(){
   const $=id=>document.getElementById(id);
   const fmt=(n,d=0)=>n==null?'–':Number(n).toLocaleString('lt-LT',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fdate=o=>!o.d?'–':(o.v==='vertinamas'?o.d:o.d.slice(0,7));
   const TIPAI={butas:'butas',zemes_sklypas:'sklypas',pastatas:'pastatas',patalpos:'patalpos',kompleksas:'kompleksas',kita:'kita',inzineriniai:'inžin.'};
   const SB='https://zbgugliqnjohqbotssgl.supabase.co', KEY='sb_publishable_PpoYli-Lf-OiTJkJVTP15A_fzR58I3D';
   const HDR={apikey:KEY,authorization:'Bearer '+KEY};
@@ -188,7 +189,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     <tr><td style="color:#777;padding:2px 10px 2px 0">Plotas</td><td>${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv==='ha'?'ha':'m²'):'–'}${o.sm?' · statyta '+o.sm:''}</td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">${o.v==='vertinamas'?'Vertė':'Kaina'}</td><td><b>${o.k!=null?fmt(o.k)+' €':'–'}</b>${o.vr==='nuoma'||o.vr==='nuomos'?' /mėn.':''}</td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">Vnt. kaina</td><td><b>${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' '+(o.vnt||''):'–'}</b></td></tr>
-    <tr><td style="color:#777;padding:2px 10px 2px 0">Data</td><td>${o.d?o.d.slice(0,7):'–'}</td></tr>
+    <tr><td style="color:#777;padding:2px 10px 2px 0">${o.v==='vertinamas'?'Vertės data':'Sandorio data'}</td><td>${fdate(o)}</td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">Šaltinis</td><td>${o.nr||''}<br><span style="color:#777">${o.vert||''}</span></td></tr>
     <tr><td style="color:#777;padding:2px 10px 2px 0">Tikslumas</td><td>${(o.geo||'–').replace('!',' (abejotina)')}</td></tr></table></div>`;
   for(const o of D){ if(o.lat==null) continue; L.circleMarker([o.lat,o.lon],{radius:4.5,color:'#666',weight:1,fillColor:'#aaa',fillOpacity:.7,bubblingMouseEvents:false}).bindPopup(popup(o),{maxWidth:320}).addTo(allLayer); }
@@ -260,11 +261,11 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
       ['Kvartiliai',vk.length?`${fmt(quant(vk,.25))}–${fmt(quant(vk,.75))}`:'–','25 % – 75 %'],
       ['Laikotarpis',dates.length?`${dates[0].slice(0,7)} … ${dates[dates.length-1].slice(0,7)}`:'–','sandorių datos'],
     ].map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
-    const cols=[['dist','Atst.','num'],['d','Data',''],['v','',''],['t','Tipas',''],['adr','Adresas','adr'],['pl','Plotas','num'],['k','Kaina €','num'],['vk','Vnt. kaina','num'],['sm','Statyta','num'],['geo','Tikslumas',''],['nr','Ataskaita','']];
+    const cols=[['dist','Atst.','num'],['d','Vertės / sandorio data',''],['v','',''],['t','Tipas',''],['adr','Adresas','adr'],['pl','Plotas','num'],['k','Kaina €','num'],['vk','Vnt. kaina','num'],['sm','Statyta','num'],['geo','Tikslumas',''],['nr','Ataskaita','']];
     const sorted=[...res].sort((a,b)=>{const x=a[sortKey],y=b[sortKey]; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir;});
     if(!res.length){ $('tablewrap').innerHTML='<div class="empty">Nieko nerasta pagal filtrus. Pilki taškai žemėlapyje – kiti bazės objektai: padidinkite spindulį ar laikotarpį, pakeiskite tipą arba išjunkite „tik tikslios koordinatės“.</div>'; draw(); return; }
     $('tablewrap').innerHTML=`<table><thead><tr>${cols.map(([k,l,c])=>`<th class="${c} ${sortKey===k?'sorted':''}" data-k="${k}">${l}${sortKey===k?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${
-      sorted.map(o=>`<tr><td class="num">${o.dist<1000?Math.round(o.dist)+' m':(o.dist/1000).toFixed(1)+' km'}</td><td>${o.d?o.d.slice(0,7):'–'}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}${o.pog?`<br><small style="color:var(--muted)">${o.pog}</small>`:''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small></td></tr>`).join('')}</tbody></table>`;
+      sorted.map(o=>`<tr><td class="num">${o.dist<1000?Math.round(o.dist)+' m':(o.dist/1000).toFixed(1)+' km'}</td><td>${fdate(o)}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}${o.pog?`<br><small style="color:var(--muted)">${o.pog}</small>`:''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small></td></tr>`).join('')}</tbody></table>`;
     $('tablewrap').querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;} render();}));
     draw();
   }
