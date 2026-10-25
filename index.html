@@ -222,13 +222,13 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
         try{
           const adr=g('adr').trim(); if(!adr){ say('Įveskite adresą.'); return; }
           if(mode==='proj'&&!g('pr').trim()){ say('Įveskite projekto pavadinimą.'); return; }
-          say('Ieškau koordinačių…'); let pos=(await nominatim(adr))[0]; if(!pos){ const c=prompt('Adreso rasti nepavyko. Įveskite koordinates „lat, lon“ arba palikite tuščia (be žemėlapio taško):'); if(c&&c.includes(',')){ const [a,b]=c.split(',').map(Number); pos={lat:a,lon:b}; } }
+          say('Ieškau koordinačių…'); let pos=await geoTry(adr,g('sav')); if(!pos){ const c=prompt('Adreso rasti nepavyko. Įveskite koordinates „lat, lon“ arba palikite tuščia (be žemėlapio taško):'); if(c&&c.includes(',')){ const [a,b]=c.split(',').map(Number); pos={lat:a,lon:b}; } }
           const t=await authTok(); if(!t){ say('Sesija pasibaigė – prisijunkite iš naujo.'); return; }
           const H={apikey:KEY,authorization:'Bearer '+t,'content-type':'application/json',prefer:'return=minimal'}; let row,tbl;
           if(mode==='sand'){ const tp=g('tp'), pl=nv('pl'), kn=nv('kn'); const vnt=tp==='zemes_sklypas'?'EUR/a':'EUR/m2'; const vk=(pl&&kn)?(tp==='zemes_sklypas'?kn/(pl*100):kn/pl):null;
             tbl='objektai'; row={vaidmuo:g('vr'),tipas:tp,adresas:adr,savivaldybe:g('sav')||null,data:g('data')||null,plotas:pl,plotas_vnt:tp==='zemes_sklypas'?'ha':'m2',kaina:kn,vnt_kaina:vk&&Math.round(vk*100)/100,vnt:vnt,vertes_rusis:g('vr')==='vertinamas'?'rinkos':'sandoris',lat:pos?pos.lat:null,lon:pos?pos.lon:null,geokodavimas:pos?(pos.osm?'adresas':'rankinis'):null,raw:{ivesta:'rankiniu budu'}}; }
           else { const pl=nv('pl'), kn=nv('kn'); tbl='skelbimai'; row={portalas:'rankinis',projektas:g('pr').trim(),vystytojas:g('vys')||null,adresas:adr,savivaldybe:g('sav')||null,korpusas:'-',butas_nr:g('nr')||'projektas',aukstas:nv('auk'),kambariai:nv('kamb'),plotas:pl,paskirtis:'Butas',tipas:'butas',kaina:kn,vnt_kaina:(pl&&kn)?Math.round(kn/pl):null,statusas:g('st'),realia:!!(m.querySelector('#n_realia')||{}).checked,privalumai:g('met')?'Statybų metai: '+g('met'):null,url:g('url')||null,lat:pos?pos.lat:null,lon:pos?pos.lon:null,nuskaityta:new Date().toISOString()}; }
-          say('Saugau…'); const r=await fetch(`${SB}/rest/v1/${tbl}`,{method:'POST',headers:H,body:JSON.stringify(row)});
+          say('Saugau…'); const r=await fetch(`${SB}/rest/v1/${tbl}${tbl==='skelbimai'?'?on_conflict=portalas,projektas,korpusas,butas_nr':''}`,{method:'POST',headers:tbl==='skelbimai'?{...H,prefer:'resolution=merge-duplicates,return=minimal'}:H,body:JSON.stringify(row)});
           if(!r.ok){ say('Nepavyko: '+(await r.text()).slice(0,200)); return; }
           say('Išsaugota ✓'); setTimeout(()=>location.reload(),600);
         }catch(e){ say('Klaida: '+e.message); } };
@@ -250,7 +250,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     m.querySelector('#es').onclick=async()=>{ try{
       const patch={}; for(const [k,,t] of cfg.f){ if(t==='checkbox'){ const c=m.querySelector('#e_'+k).checked; if(c!==!!row[k]) patch[k]=c; continue; } const v=m.querySelector('#e_'+k).value.trim(); const nv=v===''?null:(t==='number'?+v:v); if(String(nv??'')!==String(row[k]??'')) patch[k]=nv; }
       if(!Object.keys(patch).length){ m.remove(); return; }
-      if(patch.adresas&&patch.lat===undefined&&patch.lon===undefined){ say('Ieškau koordinačių…'); const p=(await nominatim(patch.adresas))[0]; if(p){ patch.lat=p.lat; patch.lon=p.lon; } }
+      if(patch.adresas&&patch.lat===undefined&&patch.lon===undefined){ say('Ieškau koordinačių…'); const p=await geoTry(patch.adresas,''); if(p){ patch.lat=p.lat; patch.lon=p.lon; } }
       if(patch.lat!==undefined||patch.lon!==undefined){ const la=patch.lat!==undefined?patch.lat:row.lat, lo=patch.lon!==undefined?patch.lon:row.lon; if(la!=null&&lo!=null) patch.geom=`SRID=4326;POINT(${lo} ${la})`; }
       if((patch.plotas!==undefined||patch.kaina!==undefined)&&cfg.t==='objektai'||(kind==='u'&&(patch.plotas!==undefined||patch.kaina!==undefined))){ const pl=patch.plotas!==undefined?patch.plotas:row.plotas, kn=patch.kaina!==undefined?patch.kaina:row.kaina; if(pl&&kn){ patch.vnt_kaina=Math.round((cfg.t==='objektai'&&row.tipas==='zemes_sklypas'?kn/(pl*100):kn/pl)*100)/100; } }
       const t=await authTok(); if(!t){ say('Sesija pasibaigė – prisijunkite iš naujo.'); return; }
@@ -307,6 +307,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     if(centerMarker) centerMarker.setLatLng([lat,lon]); else centerMarker=L.marker([lat,lon]).addTo(map);
     map.setView([lat,lon],Math.max(map.getZoom(),15)); }
   let geoTimer=null;
+  async function geoTry(adr,sav){ const v=[adr, adr.replace(/gatvė/gi,'g.').replace(/\s+[IVX]+(?=,|$)/g,''), adr.split(',').slice(0,2).join(','), adr.split(',')[0]+(sav?', '+sav:'')]; for(const q of [...new Set(v)]){ const r=await nominatim(q); if(r[0]) return r[0]; } return null; }
   async function nominatim(q){ try{ const r=await fetch('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:q+', Lietuva',format:'jsonv2',limit:5,countrycodes:'lt'}),{headers:{'accept-language':'lt'}}); return (await r.json()).map(x=>({adr:x.display_name.split(', ').slice(0,4).join(', '),lat:+x.lat,lon:+x.lon,geo:'OSM: '+x.type,n:0,osm:true})); }catch(e){ return []; } }
   const sugg=$('sugg'); let act=-1, items=[];
   $('q').addEventListener('input',()=>{
