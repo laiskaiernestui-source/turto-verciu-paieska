@@ -197,6 +197,44 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     else if(kind==='p'){ const pr=decodeURIComponent(b); if(!confirm(`Ištrinti projektą „${pr}“ (${decodeURIComponent(a)}) su visais butais?`)) return; if(await sbDelete('skelbimai',`portalas=eq.${encodeURIComponent(decodeURIComponent(a))}&projektas=eq.${encodeURIComponent(pr)}`)){ S=S.filter(s=>!(s.portalas===decodeURIComponent(a)&&s.projektas===pr)); } }
     else if(kind==='u'){ if(!confirm('Ištrinti šį butą?')) return; if(await sbDelete('skelbimai','id=eq.'+a)){ S=S.filter(s=>s.id!==+a); } }
     location.reload(); };
+  // ---- "+" : naujo projekto / sandorio / vertinimo įvedimas (tik savininkui)
+  (function(){
+    const css=document.createElement('style'); css.textContent=`.tabs button.plus{background:var(--accent)!important;color:var(--accent-fg)!important;border-radius:50%!important;display:flex;align-items:center;justify-content:center}.plus{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--accent);color:var(--accent-fg);font-size:20px;line-height:1;cursor:pointer;margin-right:8px;padding:0}
+    .mback{position:fixed;inset:0;background:#000a;z-index:2000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px}
+    .mbox{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:18px;width:min(520px,100%)}
+    .mbox h3{margin:0 0 10px;font-size:16px}.mbox .seg{display:flex;gap:6px;margin-bottom:12px}.mbox .seg button{flex:1;padding:7px;border:1px solid var(--line);border-radius:4px;background:transparent;cursor:pointer}.mbox .seg button.on{background:var(--accent);color:var(--accent-fg)}
+    .mbox .g{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}.mbox .g .w{grid-column:1/-1}.mbox .msg{font-size:12px;color:var(--muted);margin:8px 0;min-height:16px}`; document.head.appendChild(css);
+    const tabs=document.querySelector('.tabs'); const b=document.createElement('button'); b.className='plus'; b.title='Pridėti projektą, sandorį ar vertinimą'; b.textContent='+'; b.style.cssText='flex:none'; tabs.insertBefore(b,tabs.firstChild); tabs.style.alignItems='center';
+    const F=(id,l,t='text',x='')=>`<div class="${x}"><label>${l}</label><input id="n_${id}" type="${t}" ${t==='number'?'step="any"':''}></div>`;
+    const SEL=(id,l,o,x='')=>`<div class="${x}"><label>${l}</label><select id="n_${id}">${o.map(v=>`<option value="${v[0]}">${v[1]}</option>`).join('')}</select></div>`;
+    const TP=[['butas','Butas'],['zemes_sklypas','Žemės sklypas'],['pastatas','Pastatas'],['patalpos','Patalpos'],['kita','Kita']];
+    let mode='sand';
+    function body(){
+      if(mode==='sand') return `<div class="g">${SEL('vr','Rūšis',[['palyginamasis','Sandoris'],['vertinamas','Vertinimas']])}${SEL('tp','Tipas',TP)}${F('adr','Adresas','text','w')}${F('sav','Savivaldybė (pvz. Kauno m. sav.)')}${F('data','Data','date')}${F('pl','Plotas (m² arba ha sklypui)','number')}${F('kn','Kaina €','number')}</div>`;
+      return `<div class="g">${F('pr','Projekto pavadinimas','text','w')}${F('vys','Vystytojas')}${SEL('st','Būsena',[['Planuojamas','Planuojamas'],['Statomas','Statomas'],['Pastatytas','Pastatytas']])}${F('adr','Adresas','text','w')}${F('sav','Savivaldybė')}${F('met','Statybos metai','number')}${F('url','Vystytojo svetainė','text','w')}${F('nr','Buto Nr. (nebūtina)')}${F('kamb','Kambariai','number')}${F('auk','Aukštas','number')}${F('pl','Plotas m²','number')}${F('kn','Kaina € (nebūtina)','number')}</div>`; }
+    function open(){
+      if(!AUTH){ alert('Pridėti gali tik savininkas – pirmiausia prisijunkite (viršuje dešinėje).'); return; }
+      const m=document.createElement('div'); m.className='mback'; m.innerHTML=`<div class="mbox"><h3>Pridėti įrašą</h3><div class="seg"><button data-m="sand" class="on">Sandoris / vertinimas</button><button data-m="proj">Vystytojo projektas / butas</button></div><div id="mb"></div><div class="msg" id="mmsg"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="ghost" id="mc">Atšaukti</button><button class="primary" style="width:auto;padding:8px 18px" id="ms">Išsaugoti</button></div></div>`;
+      document.body.appendChild(m); const mb=m.querySelector('#mb'); const draw=()=>{ mb.innerHTML=body(); m.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x.dataset.m===mode)); }; draw();
+      m.querySelectorAll('.seg button').forEach(x=>x.onclick=()=>{mode=x.dataset.m;draw();}); m.querySelector('#mc').onclick=()=>m.remove(); m.addEventListener('mousedown',e=>{ if(e.target===m) m.remove(); });
+      const g=id=>(m.querySelector('#n_'+id)||{}).value||''; const nv=id=>g(id)===''?null:+g(id); const say=t=>m.querySelector('#mmsg').textContent=t;
+      m.querySelector('#ms').onclick=async()=>{
+        try{
+          const adr=g('adr').trim(); if(!adr){ say('Įveskite adresą.'); return; }
+          if(mode==='proj'&&!g('pr').trim()){ say('Įveskite projekto pavadinimą.'); return; }
+          say('Ieškau koordinačių…'); let pos=(await nominatim(adr))[0]; if(!pos){ const c=prompt('Adreso rasti nepavyko. Įveskite koordinates „lat, lon“ arba palikite tuščia (be žemėlapio taško):'); if(c&&c.includes(',')){ const [a,b]=c.split(',').map(Number); pos={lat:a,lon:b}; } }
+          const t=await authTok(); if(!t){ say('Sesija pasibaigė – prisijunkite iš naujo.'); return; }
+          const H={apikey:KEY,authorization:'Bearer '+t,'content-type':'application/json',prefer:'return=minimal'}; let row,tbl;
+          if(mode==='sand'){ const tp=g('tp'), pl=nv('pl'), kn=nv('kn'); const vnt=tp==='zemes_sklypas'?'EUR/a':'EUR/m2'; const vk=(pl&&kn)?(tp==='zemes_sklypas'?kn/(pl*100):kn/pl):null;
+            tbl='objektai'; row={vaidmuo:g('vr'),tipas:tp,adresas:adr,savivaldybe:g('sav')||null,data:g('data')||null,plotas:pl,plotas_vnt:tp==='zemes_sklypas'?'ha':'m2',kaina:kn,vnt_kaina:vk&&Math.round(vk*100)/100,vnt:vnt,vertes_rusis:g('vr')==='vertinamas'?'rinkos':'sandoris',lat:pos?pos.lat:null,lon:pos?pos.lon:null,geokodavimas:pos?(pos.osm?'adresas':'rankinis'):null,raw:{ivesta:'rankiniu budu'}}; }
+          else { const pl=nv('pl'), kn=nv('kn'); tbl='skelbimai'; row={portalas:'rankinis',projektas:g('pr').trim(),vystytojas:g('vys')||null,adresas:adr,savivaldybe:g('sav')||null,korpusas:'-',butas_nr:g('nr')||'projektas',aukstas:nv('auk'),kambariai:nv('kamb'),plotas:pl,paskirtis:'Butas',tipas:'butas',kaina:kn,vnt_kaina:(pl&&kn)?Math.round(kn/pl):null,statusas:g('st'),privalumai:g('met')?'Statybų metai: '+g('met'):null,url:g('url')||null,lat:pos?pos.lat:null,lon:pos?pos.lon:null,nuskaityta:new Date().toISOString()}; }
+          say('Saugau…'); const r=await fetch(`${SB}/rest/v1/${tbl}`,{method:'POST',headers:H,body:JSON.stringify(row)});
+          if(!r.ok){ say('Nepavyko: '+(await r.text()).slice(0,200)); return; }
+          say('Išsaugota ✓'); setTimeout(()=>location.reload(),600);
+        }catch(e){ say('Klaida: '+e.message); } };
+    }
+    b.onclick=open;
+  })();
   const ADM='class="admin-only"';
   try{
     const sel='id,vaidmuo,tipas,adresas,savivaldybe,data,kaina,vnt_kaina,vnt,plotas,plotas_vnt,statybos_metai,paskirtis,vertes_rusis,geokodavimas,lat,lon,ataskaita_id,pogrupis';
