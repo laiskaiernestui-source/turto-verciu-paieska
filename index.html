@@ -96,7 +96,9 @@ table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:ta
 .tablewrap th,.tablewrap td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line);white-space:normal;overflow-wrap:anywhere;vertical-align:top}
 .tablewrap table{table-layout:auto;width:100%;font-size:12px}
 .tablewrap td.num,.tablewrap th,.tablewrap .pill,.tablewrap td:nth-child(1),.tablewrap td:nth-child(2),.tablewrap td:nth-child(3){white-space:nowrap}
-.tablewrap td.adr{width:38%}
+.tablewrap td.adr{width:30%}
+.tablewrap td:last-child{min-width:150px}
+.ebtn,.delbtn{white-space:nowrap}
 .tablewrap .pact,.tablewrap .admin-only{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 td.num,th.num{text-align:right;font-family:var(--mono);font-size:12px}
 th{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel);font-weight:400}
@@ -451,7 +453,7 @@ td.adr{white-space:normal;min-width:140px}
     const lais=p.units.filter(x=>!/parduot|rezerv/i.test(x.statusas||'')); p.n=p.units.length; p.nl=lais.length; p.stad=p.units.length?null:((items[0]||{}).statusas||null); p.kmin=ks.length?Math.min(...ks):null; p.kmax=ks.length?Math.max(...ks):null; p.vmin=vk.length?Math.min(...vk):null; p.vmax=vk.length?Math.max(...vk):null; p.pmin=pl.length?Math.min(...pl):null; p.pmax=pl.length?Math.max(...pl):null; p.vmed=vk.length?quant(vk,.5):null; p.nopr=p.kmin==null&&p.vmin==null; const rs=(items.map(x=>x.statusas).find(x=>/^(Statomas|Pastatytas|Planuojamas)$/.test(x||''))); p.stage=items.map(x=>x.projekto_busena).find(Boolean)||rs||(p.nopr?'Planuojamas':'Statomas'); p.metai=((items.map(x=>(x.privalumai||'').match(/Statybų metai:\s*(\d{4})/)).find(Boolean)||[])[1])||null; p.stad=p.units.length?null:p.stage; p.data=items.map(x=>(x.nuskaityta||'').slice(0,10)).filter(Boolean).sort().pop()||null; return p; };
   const BASE=[...PR.values()];
   const itemOk=(x,f)=>{ // tipas
-    if(f.tipas&&(x.tipas==='projektas'?'butas':x.tipas)!==f.tipas) return false;
+    if((f.tipas==='butas'||f.tipas==='namas')&&(x.tipas==='projektas'?'butas':x.tipas)!==f.tipas) return false; // kiti tipai (sklypai, pastatai…) vystomų projektų nefiltruoja
     if(f.pog) return false; // pogrupiai taikomi tik vertinimų bazei
     // plotas (intervalų sankirta)
     const lo=+(x.plotas_nuo||x.plotas)||null, hi=+(x.plotas_iki||x.plotas)||null;
