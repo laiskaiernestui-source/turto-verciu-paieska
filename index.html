@@ -123,8 +123,8 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   </aside>
 
   <div class="results">
-    <div class="tiles" id="tiles"></div>
     <div class="tiles" id="tiles2" hidden></div>
+    <div class="tiles" id="tiles"></div>
     <div class="split">
       <div class="panel" style="padding:8px">
         <div id="map" style="height:520px;border-radius:6px;z-index:0"></div>
@@ -284,11 +284,12 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   }
   function quant(arr,q){ if(!arr.length) return null; const s=[...arr].sort((a,b)=>a-b); const i=(s.length-1)*q, lo=Math.floor(i), hi=Math.ceil(i); return s[lo]+(s[hi]-s[lo])*(i-lo); }
   function render(){
+    $('tiles').hidden=!$('vert').checked;
     const vk=res.filter(o=>o.vk>0).map(o=>o.vk); const sand=res.filter(o=>o.v==='palyginamasis');
     const vnt=res.find(o=>o.vnt)?.vnt||'';
     const dates=res.map(o=>o.d).filter(Boolean).sort();
     $('tiles').innerHTML=[
-      ['Rasta',fmt(res.length),`${fmt(sand.length)} sandoriai · ${fmt(res.length-sand.length)} vertinimai`],
+      ['Turto vertinimai',fmt(res.length),`${fmt(sand.length)} sandoriai · ${fmt(res.length-sand.length)} vertinimai`],
       ['Mediana',vk.length?fmt(quant(vk,.5),vnt.includes('men')?2:0):'–',vnt],
       ['Kvartiliai',vk.length?`${fmt(quant(vk,.25))}–${fmt(quant(vk,.75))}`:'–','25 % – 75 %'],
       ['Laikotarpis',dates.length?`${dates[0].slice(0,7)} … ${dates[dates.length-1].slice(0,7)}`:'–','sandorių datos'],
@@ -364,7 +365,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   }
   const _draw=draw; draw=function(){ _draw(); drawVyst(); };
   $('vyst').addEventListener('change',drawVyst);
-  $('vert').addEventListener('change',()=>{ if($('vert').checked) allLayer.addTo(map); else map.removeLayer(allLayer); });
+  $('vert').addEventListener('change',()=>{ $('tiles').hidden=!$('vert').checked; if($('vert').checked) allLayer.addTo(map); else map.removeLayer(allLayer); });
 
   // ---- savivaldybių suvestinė
   function renderSav(){
