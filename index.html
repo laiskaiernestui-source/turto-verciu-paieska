@@ -360,7 +360,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
   }
   function quant(arr,q){ if(!arr.length) return null; const s=[...arr].sort((a,b)=>a-b); const i=(s.length-1)*q, lo=Math.floor(i), hi=Math.ceil(i); return s[lo]+(s[hi]-s[lo])*(i-lo); }
   function render(){
-    $('tiles').hidden=!$('vert').checked;
+    $('tiles').hidden=!$('vert').checked; $('tablewrap').hidden=!$('vert').checked;
     const vk=res.filter(o=>o.vk>0).map(o=>o.vk); const sand=res.filter(o=>o.v==='palyginamasis');
     const vnt=res.find(o=>o.vnt)?.vnt||'';
     const dates=res.map(o=>o.d).filter(Boolean).sort();
@@ -372,7 +372,7 @@ td.adr{white-space:normal;min-width:220px;max-width:360px}
     ].map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
     const cols=[['d','Vertės / sandorio data',''],['v','',''],['t','Tipas',''],['adr','Adresas','adr'],['pl','Plotas','num'],['k','Kaina €','num'],['vk','Vnt. kaina','num'],['sm','Statyta','num'],['geo','Tikslumas',''],['nr','Ataskaita','']];
     const sorted=[...res].sort((a,b)=>{const x=a[sortKey],y=b[sortKey]; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*sortDir;});
-    if(!$('vert').checked){ $('tablewrap').innerHTML='<div class="empty">Turto vertinimai išjungti (varnelė viršuje kairėje).</div>'; draw(); return; }
+    if(!$('vert').checked){ $('tablewrap').innerHTML=''; $('tablewrap').hidden=true; draw(); return; }
     if(!res.length){ $('tablewrap').innerHTML='<div class="empty">Nieko nerasta pagal filtrus. Pilki taškai žemėlapyje – kiti bazės objektai: padidinkite spindulį ar laikotarpį, pakeiskite tipą arba išjunkite „tik tikslios koordinatės“.</div>'; draw(); return; }
     $('tablewrap').innerHTML=`<table><thead><tr>${cols.map(([k,l,c])=>`<th class="${c} ${sortKey===k?'sorted':''}" data-k="${k}">${l}${sortKey===k?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${
       sorted.slice(0,TMAX).map(o=>`<tr><td>${fdate(o)}</td><td><span class="pill ${o.v==='vertinamas'?'subj':''}">${o.v==='vertinamas'?'vertinimas':'sandoris'}</span></td><td>${TIPAI[o.t]||o.t||''}${o.pog?`<br><small style="color:var(--muted)">${o.pog}</small>`:''}</td><td class="adr">${o.adr||'<i>nuasmeninta</i>'}${o.pask?`<br><small style="color:var(--muted)">${o.pask}</small>`:''}</td><td class="num">${o.pl!=null?fmt(o.pl,o.plv==='ha'?4:1)+' '+(o.plv||''):'–'}</td><td class="num">${fmt(o.k)}</td><td class="num">${o.vk!=null?fmt(o.vk,o.vnt&&o.vnt.includes('men')?2:0)+' <small>'+(o.vnt||'')+'</small>':'–'}</td><td class="num">${o.sm||'–'}</td><td>${o.geo?`<span class="pill ${o.geo.includes('!')?'warn':''}">${o.geo.replace('!',' ?')}</span>`:''}</td><td title="${o.f||''}">${o.nr||''}<br><small style="color:var(--muted)">${o.vert||''}</small><div class="admin-only"><button class="delbtn" style="border-color:var(--accent);color:var(--accent)" onclick="__edit('o',${o.id})">Redaguoti</button> <button class="delbtn" onclick="__del('o',${o.id})">objektą</button><button class="delbtn" onclick="__del('a',${o.aid})">ataskaitą</button></div></td></tr>`).join('')}</tbody></table>${res.length>TMAX?`<div class="empty" style="padding:10px">Lentelėje rodomi pirmi ${TMAX} iš ${fmt(res.length)} – priartinkite žemėlapį.</div>`:''}`;
