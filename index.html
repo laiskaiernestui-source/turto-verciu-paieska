@@ -256,7 +256,7 @@ td.adr{white-space:normal;min-width:140px}
     else if(kind==='a'){ const n=D.filter(o=>o.aid===+a).length; if(!confirm(`Ištrinti visą vertinimo ataskaitą kartu su ${n} objektais (vertinamu ir palyginamaisiais)?`)) return; if(await sbDelete('ataskaitos','id=eq.'+a)){ D=D.filter(o=>o.aid!==+a); } }
     else if(kind==='p'){ const pr=decodeURIComponent(b); if(!confirm(`Ištrinti projektą „${pr}“ (${decodeURIComponent(a)}) su visais butais?`)) return; if(await sbDelete('skelbimai',`portalas=eq.${encodeURIComponent(decodeURIComponent(a))}&projektas=eq.${encodeURIComponent(pr)}`)){ S=S.filter(s=>!(s.portalas===decodeURIComponent(a)&&s.projektas===pr)); } }
     else if(kind==='u'){ if(!confirm('Ištrinti šį butą?')) return; if(await sbDelete('skelbimai','id=eq.'+a)){ S=S.filter(s=>s.id!==+a); } }
-    else if(kind==='k'){ if(!confirm('Ištrinti šį sklypą / projektą?')) return; if(await sbDelete('sklypai','id=eq.'+a)){ K=K.filter(s=>s.id!==+a); } }
+    else if(kind==='k'){ if(!confirm('Ištrinti šį sklypą / projektą?')) return; const kk=K.find(s=>s.id===+a); if(await sbDelete('sklypai','id=eq.'+a)){ K=K.filter(s=>s.id!==+a); if(kk&&kk.planas_url){ try{ const t=await authTok(); await fetch(`${SB}/storage/v1/object/planai`,{method:'DELETE',headers:{apikey:KEY,authorization:'Bearer '+t,'content-type':'application/json'},body:JSON.stringify({prefixes:[kk.planas_url]})}); }catch(e){} } } }
     location.reload(); };
   // ---- "+" : naujo projekto / sandorio / vertinimo įvedimas (tik savininkui)
   (function(){
@@ -433,7 +433,7 @@ td.adr{white-space:normal;min-width:140px}
       if($('tikmano').checked&&!o.mano) continue;
       if(!nuoma&&(o.vr==='nuoma'||o.vr==='nuomos')) continue;
       if(tik&&!(o.geo==='adresas'||o.geo==='gatve')) continue;
-      if(o.d&&o.d<minD) continue;
+      if(o.d&&o.d<minD&&!$('tikmano').checked) continue;
       if(!isNaN(pl1)&&(o.pl==null||o.pl<pl1)) continue;
       if(!isNaN(pl2)&&(o.pl==null||o.pl>pl2)) continue;
       if(o.sm==null){ if(!smDef) continue; } else if(o.sm<sm1||o.sm>sm2) continue;
