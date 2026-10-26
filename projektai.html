@@ -236,7 +236,7 @@ textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:2
     drawList(); fillKas();
     const p=P.find(x=>x.id===cur);
     $('ptitle').textContent=p?p.pavadinimas:'Visi projektai'; $('psub').innerHTML=p?`${esc(p.adresas||'')}${p.etapas?' · '+esc(p.etapas):''}${p.vadovas?' · vadovas '+esc(name(p.vadovas)):''}${p.aprasymas?`<div style="margin-top:4px;max-width:900px">${esc(p.aprasymas)}</div>`:''}`:'';
-    $('editpr').hidden=!p;
+    $('editpr').style.display=p&&isAdmin()?'':'none';
     const vs=visible(); const open=vs.filter(t=>t.busena!=='Atlikta'); const late=open.filter(t=>t.terminas&&t.terminas<today()); const week=open.filter(t=>t.terminas&&t.terminas>=today()&&t.terminas<=new Date(Date.now()+7*864e5).toISOString().slice(0,10)); const mine=open.filter(t=>(t.atsakingas||'').toLowerCase()===ME);
     $('ptiles').innerHTML=[['Atviros užduotys',open.length,''],['Vėluoja',late.length,late.length?'terminas praėjo':''],['Šią savaitę',week.length,'terminas per 7 d.'],['Mano',mine.length,'priskirta man']].map(([k,v,s])=>`<div class="tile ${k==='Vėluoja'&&v?'bad':''}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
     $('board').innerHTML=COLS.map(([k,l])=>{ const ts=vs.filter(t=>t.busena===k); return `<div class="col" data-st="${k}"><div class="colh">${l} <span>${ts.length}</span></div><div class="cards" data-st="${k}">${ts.map(card).join('')}</div></div>`; }).join('');
