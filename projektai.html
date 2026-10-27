@@ -508,7 +508,7 @@ input[type=text],input[type=number],input[type=date],input[type=search],select,t
   async function deleteItem(p,it){ if(!confirm(`Ištrinti „${it.name}“?`)) return false; try{ await api('gantt_elementai?id=eq.'+it.gid,{method:'DELETE',headers:{prefer:'return=minimal'}}); GE=GE.filter(g=>g.id!==it.gid); const items=itemsOf(p); const ch=new Map(); items.forEach(x=>{ if(x.preds.includes(it.key)) ch.set(x.key,{pirmtakai:x.preds.filter(k=>k!==it.key)}); if(x.parent===it.key) ch.set(x.key,{...(ch.get(x.key)||{}),tevas:null}); }); if(ch.size) await commit(p,ch,new Map(items.map(i=>[i.key,i]))); return true; }catch(e){ alert('Nepavyko: '+e.message); return false; } }
 
   // ---- Gantt vaizdas
-  const GZ={w:28,m:12,q:4}; let gz='w'; let gtWide=true; let gtScroll=null; // {pid,left,top,t0,gz} const gtOpen=new Set(); let gtInit=false; let showLinks=true; const SELSET=new Set();
+  const GZ={w:28,m:12,q:4}; let gz='w'; let gtWide=true; let gtScroll=null; /* {pid,left,top,t0,gz} */ const gtOpen=new Set(); let gtInit=false; let showLinks=true; const SELSET=new Set();
   const who=e=>e?`<span class="av" title="${esc(e)}">${ini(e)}</span>`:'<span class="av none" title="Nepriskirta">–</span>';
   function drawGantt(p){
     { const w=$('gtw'); if(w&&gtScroll&&gtScroll.pid===p.id){ gtScroll.left=w.scrollLeft; gtScroll.top=w.scrollTop; } }
