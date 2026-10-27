@@ -375,8 +375,8 @@ input[type=text],input[type=number],input[type=date],input[type=search],select,t
   function draw(){
     drawList(); fillKas();
     const p=P.find(x=>x.id===cur);
-    $('ptitle').textContent=p?p.pavadinimas:'Visi projektai'; $('psub').innerHTML=p?`${esc(p.adresas||'')}${p.etapas?' · '+esc(p.etapas):''}${p.vadovas?' · vadovas '+esc(name(p.vadovas)):''}${p.aprasymas?`<div style="margin-top:4px;max-width:900px">${esc(p.aprasymas)}</div>`:''}`:'';
-    $('editpr').style.display=p&&isAdmin()?'':'none';
+     $('psub').innerHTML=p?`${esc(p.adresas||'')}${p.etapas?' · '+esc(p.etapas):''}${p.vadovas?' · vadovas '+esc(name(p.vadovas)):''}${p.aprasymas?`<div style="margin-top:4px;max-width:900px">${esc(p.aprasymas)}</div>`:''}`:'';
+    $('editpr').style.display='none'; $('ptitle').innerHTML=p?esc(p.pavadinimas)+(isAdmin()?' <button class="ghost ia" id="ptedit" title="Redaguoti projektą" style="padding:2px 7px;font-size:12px;vertical-align:middle">⚙</button>':''):'Visi projektai'; const pe=$('ptedit'); if(pe) pe.onclick=()=>$('editpr').onclick();
     document.querySelector('.phead').classList.toggle('allview',!p);
     $('vsw').style.display=p?'':'none'; if(!p) view='tasks'; $('vsw').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
     drawLast(p);
