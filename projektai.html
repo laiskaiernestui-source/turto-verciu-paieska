@@ -368,7 +368,8 @@ body.admin .tile .v{font-variant-numeric:tabular-nums}
   // changes: Map(sid -> {pradzia,pabaiga,gaire?,pirmtakai?,grupe?}); perplanuoja pasekėjus ir išsaugo viską vienu užklausimu
   async function applyDates(p,changes){ const rows=rowsOf(p); const by=new Map(rows.map(r=>[r.id,r])); const patches=new Map();
     for(const [sid,c] of changes){ const r=by.get(sid); if(!r) continue; if('pradzia' in c) r.pr=c.pradzia; if('pabaiga' in c) r.pb=c.pabaiga; if('gaire' in c) r.gaire=c.gaire; if('pirmtakai' in c) r.preds=c.pirmtakai; if(r.gaire&&r.pr) r.pb=r.pr; patches.set(sid,{...c,pradzia:r.pr,pabaiga:r.pb}); }
-    const casc=schedule(rows,[...changes.keys()]); for(const [sid,pt] of casc){ patches.set(sid,{...(patches.get(sid)||{}),...pt}); }
+    const seeds=[...changes.keys()]; for(const sid of changes.keys()){ const r=by.get(sid); if(r) seeds.push(...r.preds); } // naujas pirmtakas perplanuoja ir patį darbą
+    const casc=schedule(rows,seeds); for(const [sid,pt] of casc){ patches.set(sid,{...(patches.get(sid)||{}),...pt}); }
     return commit(p,patches); }
   const isAncestor=(rows,a,b)=>{ // ar a pasiekiamas iš b per pirmtakus (ciklo patikra)
     const by=new Map(rows.map(r=>[r.id,r])); const seen=new Set(); const st=[b]; while(st.length){ const x=st.pop(); if(x===a) return true; if(seen.has(x)) continue; seen.add(x); (by.get(x)?.preds||[]).forEach(i=>st.push(i)); } return false; };
