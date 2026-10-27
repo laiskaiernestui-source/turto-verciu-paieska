@@ -500,9 +500,10 @@ input[type=text],input[type=number],input[type=date],input[type=search],select,t
   async function deleteItem(p,it){ if(!confirm(`Ištrinti „${it.name}“?`)) return false; try{ await api('gantt_elementai?id=eq.'+it.gid,{method:'DELETE',headers:{prefer:'return=minimal'}}); GE=GE.filter(g=>g.id!==it.gid); const items=itemsOf(p); const ch=new Map(); items.forEach(x=>{ if(x.preds.includes(it.key)) ch.set(x.key,{pirmtakai:x.preds.filter(k=>k!==it.key)}); if(x.parent===it.key) ch.set(x.key,{...(ch.get(x.key)||{}),tevas:null}); }); if(ch.size) await commit(p,ch,new Map(items.map(i=>[i.key,i]))); return true; }catch(e){ alert('Nepavyko: '+e.message); return false; } }
 
   // ---- Gantt vaizdas
-  const GZ={w:28,m:12,q:4}; let gz='w'; let gtWide=true; const gtOpen=new Set(); let gtInit=false; let showLinks=true; const SELSET=new Set();
+  const GZ={w:28,m:12,q:4}; let gz='w'; let gtWide=true; let gtScroll=null; // {pid,left,top,t0,gz} const gtOpen=new Set(); let gtInit=false; let showLinks=true; const SELSET=new Set();
   const who=e=>e?`<span class="av" title="${esc(e)}">${ini(e)}</span>`:'<span class="av none" title="Nepriskirta">–</span>';
   function drawGantt(p){
+    { const w=$('gtw'); if(w&&gtScroll&&gtScroll.pid===p.id){ gtScroll.left=w.scrollLeft; gtScroll.top=w.scrollTop; } }
     const items=itemsOf(p); const T_=treeOf(p,items); const adm=isAdmin();
     const NB=B.filter(b=>b.projektas_id===p.id&&b.pradzia&&b.pabaiga).map(b=>({key:'n'+b.notion_id,kind:'n',name:b.pozicija,pr:b.pradzia,pb:b.pabaiga,st:b.statusas==='Atlikta'?'atlikta':b.statusas==='Vyksta'?'vykdoma':'nepradėta',url:b.url,who:null,firma:b.firma,preds:[],notion:true}));
     const vis=it=>!(STATE.hideDone&&it.st==='atlikta')&&!(STATE.hideUndated&&!(it.pr&&it.pb));
@@ -557,7 +558,7 @@ input[type=text],input[type=number],input[type=date],input[type=search],select,t
     $('gt').querySelectorAll('.gtr:not(.gtg):not(.gproj):not(.gthd) .gtl').forEach(l=>l.onclick=e=>{ if(e.target.closest('button')) return; const k=l.parentElement.dataset.key; if(!k) return; const it=T_.by.get(k); if(!it) return; if(e.shiftKey&&adm){ SELSET.has(k)?SELSET.delete(k):SELSET.add(k); drawGantt(p); } else editItem(p,it); });
     $('gt').querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); editItem(p,T_.by.get(b.dataset.edit)); });
     $('gt').querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); editItem(p,null,{tipas:'darbas',tevas:b.dataset.add}); });
-    const w=$('gtw'); const first=psum.s&&psum.s<today()?psum.s:(psum.s||today()); const anchor=today()<first?today():first; w.scrollLeft=Math.max(0,x(anchor)-ppd*7);
+    const w=$('gtw'); if(gtScroll&&gtScroll.pid===p.id&&gtScroll.gz===gz){ const shift=gtScroll.t0&&gtScroll.t0!==t0?dur(t0,gtScroll.t0)*ppd:0; w.scrollLeft=Math.max(0,gtScroll.left+shift); w.scrollTop=gtScroll.top; } else { const first=psum.s&&psum.s<today()?psum.s:(psum.s||today()); const anchor=today()<first?today():first; w.scrollLeft=Math.max(0,x(anchor)-ppd*7); } gtScroll={pid:p.id,left:w.scrollLeft,top:w.scrollTop,t0,gz};
     drawLinks(items);
     // tuščia eilutė: paspaudimas ant laiko juostos suteikia datas (7 d. nuo paspaudimo vietos)
     $('gt').querySelectorAll('.gghost').forEach(g=>{ const trk=g.parentElement; const it=T_.by.get(g.dataset.key); if(!it) return;
