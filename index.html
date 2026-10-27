@@ -2,22 +2,26 @@
 <title>Realia – Analitikos įrankis</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: control panel left (sticky on desktop), results right; stacks on phone. Data-tool treatment, tabular numerals everywhere. */
 :root{
-  --bg:#e3e1de; --panel:#f1efec; --fg:#111111; --muted:#6a655e; --line:#cdc8c2;
-  --accent:#4f5440; --accent-fg:#f1efec; --accent-soft:#d6d6c6;
-  --warn:#8a7a0e; --warn-soft:#ece6bd; --good:#4f5440;
-  --font:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"Space Mono","Courier New",ui-monospace,Menlo,Consolas,monospace;
+  /* Realia brandbook 2026.10 (aisdesign): #1E1E1E #403B37 #5E5C4A #BAA920 #D3CCC8 #E7E7E7 */
+  --bg:#E7E7E7; --panel:#F3F2F1; --fg:#1E1E1E; --muted:#5E5C4A; --line:#D3CCC8;
+  --accent:#1E1E1E; --accent-fg:#E7E7E7; --accent-soft:#EDEAE7;
+  --gold:#BAA920; --warn:#8F8218; --warn-soft:#F1EDD0; --good:#5E5C4A; --bad:#A84A3A;
+  --font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --head:"Red Hat Display","Plus Jakarta Sans",system-ui,sans-serif;
+  --mono:"Nitti","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#111111; --panel:#1b1a18; --fg:#ece8e2; --muted:#9d978e; --line:#33302b;
-  --accent:#b8a21a; --accent-fg:#111111; --accent-soft:#2b2815; --warn:#d1bb3a; --warn-soft:#2e2a10; --good:#9aa27a; color-scheme:dark } }
+  --bg:#1E1E1E; --panel:#2A2724; --fg:#E7E7E7; --muted:#B5AEA8; --line:#403B37;
+  --accent:#BAA920; --accent-fg:#1E1E1E; --accent-soft:#363129; --gold:#BAA920; --warn:#D1BB3A; --warn-soft:#2E2A10; --good:#BAA920; --bad:#C9604E; color-scheme:dark } }
 :root[data-theme="dark"]{
-  --bg:#111111; --panel:#1b1a18; --fg:#ece8e2; --muted:#9d978e; --line:#33302b;
-  --accent:#b8a21a; --accent-fg:#111111; --accent-soft:#2b2815; --warn:#d1bb3a; --warn-soft:#2e2a10; --good:#9aa27a; color-scheme:dark }
+  --bg:#1E1E1E; --panel:#2A2724; --fg:#E7E7E7; --muted:#B5AEA8; --line:#403B37;
+  --accent:#BAA920; --accent-fg:#1E1E1E; --accent-soft:#363129; --gold:#BAA920; --warn:#D1BB3A; --warn-soft:#2E2A10; --good:#BAA920; --bad:#C9604E; color-scheme:dark }
+h2,.tile .v,.ptitle,.ct,.mxh b,.gtl b,.bzt tr.bzg b,.mbox h3,.pitem b,.colh{font-family:var(--head)}
+.tile .v{font-weight:600;letter-spacing:-.01em}.ptitle{font-weight:600}
 .logo{display:block;height:34px;width:auto}.logo.l{display:none}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .logo.d{display:none}:root:not([data-theme="light"]) .logo.l{display:block}}
 :root[data-theme="dark"] .logo.d{display:none}:root[data-theme="dark"] .logo.l{display:block}
@@ -46,7 +50,7 @@ header .who{font-family:var(--mono);font-size:11px;letter-spacing:.03em;color:va
 .pact{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
 .ebtn,.delbtn{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:2px;cursor:pointer;background:transparent}
 .ebtn{border:1px solid var(--accent);color:var(--accent)}.ebtn:hover{background:var(--accent);color:var(--accent-fg)}
-.delbtn{border:1px solid #a84a3a;color:#a84a3a;margin:0}.delbtn:hover{background:#a84a3a;color:#fff}
+.delbtn{border:1px solid var(--bad);color:var(--bad);margin:0}.delbtn:hover{background:var(--bad);color:#fff}
 h2,.tiles .t{font-family:var(--mono)}
 *{box-sizing:border-box}input[type=checkbox]{accent-color:var(--accent)}
 body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;
@@ -92,9 +96,9 @@ button.ghost{padding:6px 12px;border:1px solid var(--line);border-radius:2px;bac
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:12px 14px}
 #tiles2 .tile{border-left:3px solid var(--accent)}
-#tiles .tile{border-left:3px solid #3f5a80}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #tiles .tile{border-left-color:#7f9cc4}}
-:root[data-theme="dark"] #tiles .tile{border-left-color:#7f9cc4}
+#tiles .tile{border-left:3px solid #5E5C4A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #tiles .tile{border-left-color:#BAA920}}
+:root[data-theme="dark"] #tiles .tile{border-left-color:#BAA920}
 .tile .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
 .tile .v{font-family:var(--mono);font-size:22px;font-weight:400;margin-top:4px;font-variant-numeric:tabular-nums}
 .tile .s{font-size:11px;color:var(--muted);margin-top:2px}.tile .s:empty{display:none}
@@ -119,7 +123,7 @@ th.sorted{color:var(--accent)}
 td.adr{white-space:normal;min-width:140px}
 .pill{display:inline-block;padding:1px 7px;border-radius:2px;font-size:10px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--line);color:var(--muted)}
 .pill.subj{border-color:var(--accent);color:var(--accent)}
-.pill.mano{border-color:#b8a21a;color:#b8a21a;background:rgba(184,162,26,.12)}
+.pill.mano{border-color:#BAA920;color:#BAA920;background:rgba(184,162,26,.12)}
 .pill.warn{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
 .empty{padding:28px;text-align:center;color:var(--muted)}
 .note{font-size:12px;color:var(--muted);margin-top:8px}
