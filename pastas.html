@@ -663,7 +663,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
       try{ await api('uzduotys',{method:'POST',headers:{prefer:'return=minimal'},body:JSON.stringify(row)}); x.remove(); toast('Užduotis sukurta – matysite Projektų valdyme.'); }catch(e){ x.querySelector('#mmsg').textContent='Nepavyko: '+e.message; } }; }
 
   // ---- klaviatūra (kaip Gmail): c, /, j/k, Enter, u, e, #, r, a, f
-  document.addEventListener('keydown',e=>{ if(e.target.matches('input,textarea,select')||e.ctrlKey||e.metaKey||e.altKey) return; const k=e.key; const idx=ST.convs.findIndex(c=>c.id===ST.cur);
+  document.addEventListener('keydown',e=>{ if(e.target.matches('input,textarea,select')||e.target.isContentEditable||e.target.closest('[contenteditable="true"],.mback,#cwin,.ic')||e.ctrlKey||e.metaKey||e.altKey) return; const k=e.key; const idx=ST.convs.findIndex(c=>c.id===ST.cur);
     if(k==='c'){ e.preventDefault(); composeNew(); } else if(k==='/'){ e.preventDefault(); $('mq').focus(); } else if(k==='u'||k==='Escape'){ if(ST.cur) backToList(); }
     else if(k==='j'||k==='k'){ e.preventDefault(); const hl=[...document.querySelectorAll('.mi')]; let i=hl.findIndex(x=>x.classList.contains('kb')); if(i<0) i=idx; i=k==='j'?Math.min(hl.length-1,i+1):Math.max(0,i-1); hl.forEach(x=>x.classList.remove('kb')); if(hl[i]){ hl[i].classList.add('kb'); hl[i].scrollIntoView({block:'nearest'}); if(ST.cur&&isMobile()) openConv(hl[i].dataset.id); } }
     else if(k==='Enter'||k==='o'){ const h=document.querySelector('.mi.kb'); if(h) openConv(h.dataset.id); }
