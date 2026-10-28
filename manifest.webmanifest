@@ -14,6 +14,7 @@
   ],
   "shortcuts": [
     {"name": "Paštas", "url": "./pastas.html", "icons": [{"src": "icon-192.png?v=2", "sizes": "192x192"}]},
+    {"name": "Kalendorius", "url": "./kalendorius.html", "icons": [{"src": "icon-192.png?v=2", "sizes": "192x192"}]},
     {"name": "Projektų valdymas", "url": "./projektai.html", "icons": [{"src": "icon-192.png?v=2", "sizes": "192x192"}]},
     {"name": "Analitikos įrankis", "url": "./index.html", "icons": [{"src": "icon-192.png?v=2", "sizes": "192x192"}]}
   ]
