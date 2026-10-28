@@ -686,7 +686,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
   // šoninė juosta (aplankai) – tas pats mygtukas ir būsena kaip kituose įrankiuose
   { const sh=()=>localStorage.getItem('tv_side')==='0'; const ap=()=>{ const h=sh(); document.body.classList.toggle('sidehide',h); const b=$('sidebtn'); if(b){ b.classList.toggle('on',!h); b.title=h?'Rodyti šoninę juostą':'Slėpti šoninę juostą'; } };
     $('sidebtn').onclick=()=>{ localStorage.setItem('tv_side',sh()?'1':'0'); ap(); layoutDock&&layoutDock(); }; $('sidehot').onmouseenter=()=>document.body.classList.add('sidepeek'); document.addEventListener('mousemove',e=>{ if(document.body.classList.contains('sidepeek')&&e.clientX>document.querySelector('.mnav').getBoundingClientRect().right+24) document.body.classList.remove('sidepeek'); }); ap(); }
-  $('mnew').onclick=()=>composeNew(); $('fab').onclick=()=>composeNew(); $('mref').onclick=()=>{ loadFolders(); loadMsgs(); }; $('mburger').onclick=openDrawer; $('drawerx').onclick=closeDrawer;
+  $('mback').onclick=()=>backToList(); $('mnew').onclick=()=>composeNew(); $('fab').onclick=()=>composeNew(); $('mref').onclick=()=>{ loadFolders(); loadMsgs(); }; $('mburger').onclick=openDrawer; $('drawerx').onclick=closeDrawer;
   const qi=$('mq'); let qt; qi.oninput=()=>{ clearTimeout(qt); qt=setTimeout(()=>{ ST.q=qi.value; ST.sel.clear(); backToList(); loadMsgs(); },400); }; qi.onkeydown=e=>{ if(e.key==='Escape'){ qi.value=''; qi.oninput(); qi.blur(); } };
   window.addEventListener('popstate',()=>{ if(ST.cur) backToList(); });
   $('meta').textContent='';
