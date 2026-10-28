@@ -784,8 +784,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
     }catch(e){ tab.innerHTML=`<div class="note" style="padding:20px;color:var(--bad)">Klaida: ${esc(e.message)}</div>`; } }
   function sideHidden(){ const v=localStorage.getItem('tv_side'); if(v==null) return (view==='gantt'||view==='budget')&&!!cur; return v==='0'; }
   $('sidebtn').onclick=()=>{ localStorage.setItem('tv_side',sideHidden()?'1':'0'); draw(); };
-  $('sidehot').onmouseenter=()=>document.body.classList.add('sidepeek'); $('sidehot').onmouseleave=()=>document.body.classList.remove('sidepeek');
-  document.querySelector('.pside').onmouseleave=()=>document.body.classList.remove('sidepeek');
+  $('sidehot').onmouseenter=()=>document.body.classList.add('sidepeek'); document.addEventListener('mousemove',e=>{ if(document.body.classList.contains('sidepeek')&&(e.clientX>document.querySelector('.pside').getBoundingClientRect().right+24)) document.body.classList.remove('sidepeek'); });
   $('vsw').querySelectorAll('button').forEach(b=>b.onclick=()=>{ view=b.dataset.v; draw(); });
 
   // ---- modalai
