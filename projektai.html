@@ -718,7 +718,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
   const MS={clientId:'324be31f-8126-4281-bb0a-744d40bbb7e7',tenant:'48433b28-9306-40e1-9c5f-8e79054da5ed',scopes:['Files.ReadWrite.All','User.Read']};
   const msReady=()=>MS.clientId&&!MS.clientId.startsWith('__');
   let msal=null, msAcc=null; const FL={stack:[],q:'',busy:false};
-  async function msInit(){ if(msal) return msal; if(!window.msal){ await new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src='https://alcdn.msauth.net/browser/3.28.1/js/msal-browser.min.js'; s.onload=ok; s.onerror=()=>bad(new Error('Nepavyko įkelti MSAL')); document.head.appendChild(s); }); }
+  async function msInit(){ if(msal) return msal; if(!window.msal){ await new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js'; s.onload=ok; s.onerror=()=>bad(new Error('Nepavyko įkelti MSAL')); document.head.appendChild(s); }); }
     msal=new window.msal.PublicClientApplication({auth:{clientId:MS.clientId,authority:'https://login.microsoftonline.com/'+MS.tenant,redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});
     await msal.initialize(); try{ const r=await msal.handleRedirectPromise(); if(r&&r.account) msAcc=r.account; }catch(e){} if(!msAcc) msAcc=msal.getAllAccounts()[0]||null; return msal; }
   async function msToken(interactive){ await msInit(); if(!msAcc){ if(!interactive) return null; const r=await msal.loginPopup({scopes:MS.scopes,prompt:'select_account'}); msAcc=r.account; }
