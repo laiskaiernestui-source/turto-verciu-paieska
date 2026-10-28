@@ -353,7 +353,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
 #appmenu{display:none}
 @media (max-width:900px){
  header nav.apps{display:none!important}
- #appburger{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-size:22px;cursor:pointer;margin-left:auto}
+ header{position:relative;padding-right:64px}#appburger{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:22px;cursor:pointer;position:absolute;top:8px;right:0;z-index:50}header .who,header #login,header>span[style*='margin-left:auto']{display:none!important}#appmenu .pane .out{margin-top:8px;width:100%}
  #appmenu{display:block;position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .15s}#appmenu.open{opacity:1;pointer-events:auto}
  #appmenu .pane{position:absolute;right:0;top:0;bottom:0;width:min(300px,85vw);background:var(--panel);padding:18px 14px;display:flex;flex-direction:column;gap:6px;transform:translateX(100%);transition:transform .2s;box-shadow:-4px 0 24px rgba(0,0,0,.25)}#appmenu.open .pane{transform:none}
  #appmenu .pane h3{margin:0 0 8px;font-family:var(--head);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
@@ -371,7 +371,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
 <div class="mail">
   <nav class="mnav"><div class="mtb"><button class="primary" id="mnew" style="width:100%;padding:10px;border-radius:20px">✎ Rašyti</button></div><div id="folders"></div><div style="padding:8px 12px;border-top:1px solid var(--line)"><button class="ghost" id="msig" style="width:100%">✍ Parašas</button></div><div class="note" style="padding:6px 12px 10px"><span id="mwho"></span> · <a href="#" id="mout">atsijungti</a></div></nav>
   <div class="mmain">
-    <div class="mtop"><button class="ghost" id="mburger" title="Aplankai">☰</button><button class="ghost" id="mback" title="Atgal">←</button><h2 id="mtitle">Gauti</h2><input type="search" id="mq" placeholder="Ieškoti laiškų…"><button class="ghost" id="mref" title="Atnaujinti">↻</button></div>
+    <div class="mtop"><button class="ghost" id="mburger" title="Aplankai">▤</button><button class="ghost" id="mback" title="Atgal">←</button><h2 id="mtitle">Gauti</h2><input type="search" id="mq" placeholder="Ieškoti laiškų…"><button class="ghost" id="mref" title="Atnaujinti">↻</button></div>
     <div id="bulk" style="display:none"><b id="bulkn">0</b>&nbsp;pažymėta: <button class="ghost" data-a="ar">🗄 Archyvuoti</button><button class="ghost" data-a="del">🗑 Ištrinti</button><button class="ghost" data-a="rd">Skaityta</button><button class="ghost" data-a="ur">Neskaityta</button><button class="ghost" data-a="x">✕</button></div>
     <div id="mlist"></div>
     <div id="mread"></div>
@@ -578,7 +578,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
 })();
 </script><script id="appsw">(function(){ const H=document.querySelector('header'); if(!H) return; const cur=location.pathname.split('/').pop()||'index.html'; const apps=[['pastas.html','✉','Paštas'],['projektai.html','▦','Projektų valdymas'],['index.html','◎','Analitikos įrankis']];
  const b=document.createElement('button'); b.id='appburger'; b.setAttribute('aria-label','Meniu'); b.textContent='☰'; H.appendChild(b);
- const m=document.createElement('div'); m.id='appmenu'; m.innerHTML='<div class="pane"><button class="x" aria-label="Uždaryti">✕</button><h3>Realia platforma</h3>'+apps.map(([h,i,n])=>`<a href="${h}" class="${(cur===h||(cur==='' && h==='index.html'))?'on':''}"><i>${i}</i>${n}</a>`).join('')+'<div class="who" id="am_who"></div></div>'; document.body.appendChild(m);
+ const m=document.createElement('div'); m.id='appmenu'; m.innerHTML='<div class="pane"><button class="x" aria-label="Uždaryti">✕</button><h3>Realia platforma</h3>'+apps.map(([h,i,n])=>`<a href="${h}" class="${(cur===h||(cur==='' && h==='index.html'))?'on':''}"><i>${i}</i>${n}</a>`).join('')+'<div class="who" id="am_who"></div><button class="ghost out" id="am_out">Atsijungti</button></div>'; document.body.appendChild(m); m.querySelector('#am_out').onclick=()=>{ const l=document.getElementById('login'); if(l) l.click(); };
  const open=()=>{ m.classList.add('open'); const w=document.getElementById('who'); document.getElementById('am_who').textContent=w?w.textContent:''; }; const close=()=>m.classList.remove('open');
  b.onclick=open; m.querySelector('.x').onclick=close; m.addEventListener('click',e=>{ if(e.target===m) close(); });
  if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
