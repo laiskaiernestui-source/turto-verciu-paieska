@@ -754,7 +754,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
     document.body.appendChild(m); const close=()=>{ m.remove(); document.removeEventListener('keydown',esc_); }; const esc_=e=>{ if(e.key==='Escape') close(); }; document.addEventListener('keydown',esc_); m.querySelector('#pvx').onclick=close; m.addEventListener('mousedown',e=>{ if(e.target===m) close(); });
     const body=m.querySelector('#pvb'); const dl=it['@microsoft.graph.downloadUrl'];
     try{ if(['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext)&&dl){ body.innerHTML=`<img src="${esc(dl)}" alt="" style="max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto">`; return; }
-      if(ext==='pdf'&&dl){ body.innerHTML=`<iframe src="${esc(dl)}#toolbar=1" title="PDF"></iframe>`; return; }
+      if(ext==='pdf'&&dl){ try{ const b=await fetch(dl).then(r=>{ if(!r.ok) throw new Error(r.status); return r.blob(); }); const u=URL.createObjectURL(new Blob([b],{type:'application/pdf'})); body.innerHTML=`<iframe src="${u}#toolbar=1" title="PDF"></iframe>`; return; }catch(e2){ console.warn('pdf blob',e2); } }
       const r=await graph(`/drives/${d}/items/${it.id}/preview`,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});
       if(r&&r.getUrl){ body.innerHTML=`<iframe src="${esc(r.getUrl)}" title="Peržiūra" allowfullscreen></iframe>`; return; }
       throw new Error('peržiūra negalima'); }
