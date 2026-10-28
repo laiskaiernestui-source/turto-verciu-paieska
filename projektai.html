@@ -808,6 +808,10 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
     m.querySelector('#ms').onclick=async()=>{ const row=readProj(m,p); try{ const j=await api('projektai?id=eq.'+p.id,{method:'PATCH',headers:{prefer:'return=representation'},body:JSON.stringify(row)}); Object.assign(p,j[0]); m.remove(); draw(); }catch(e){ m.querySelector('#mmsg').textContent='Nepavyko: '+e.message; } }; };
   ['f_mano','f_atl','f_kas'].forEach(id=>$(id).addEventListener('change',draw));
   draw();
+  // Microsoft (OneDrive) prisijungimas kartu su platforma: tyliai per SSO, o jei nepavyksta – vienas peradresavimas (kartą per sesiją)
+  (async()=>{ if(!msReady()||!ME) return; try{ await msInit(); if(msAcc) return; const tried=sessionStorage.getItem('tv_ms_tried'); 
+      try{ const r=await msal.ssoSilent({scopes:MS.scopes,loginHint:ME}); msAcc=r.account; if(view==='files') draw(); return; }catch(e){ console.info('MS SSO silent nepavyko:',e.errorCode||e.message); }
+      if(tried) return; sessionStorage.setItem('tv_ms_tried','1'); sessionStorage.setItem('tv_after',JSON.stringify({view,cur})); await msal.loginRedirect({scopes:MS.scopes,loginHint:ME}); }catch(e){ console.warn('MS auto',e); } })();
   // atnaujinimas fone kas 60 s (kolegų pakeitimai)
   setInterval(async()=>{ if(document.querySelector('.mback')) return; try{ const [p,t,pm,b,ns,ge]=await Promise.all([api('projektai?select=*&order=busena,pavadinimas'),api('uzduotys?select=*&order=eile,id'),api('projekto_matrica?select=*'),api('biudzetas?select=*&order=faze,pozicija'),api('notion_saltiniai?select=*'),api('gantt_elementai?select=*&order=eile,id')]); if(JSON.stringify(t)!==JSON.stringify(T)||JSON.stringify(p)!==JSON.stringify(P)||JSON.stringify(pm)!==JSON.stringify(PM)||JSON.stringify(b)!==JSON.stringify(B)||JSON.stringify(ns)!==JSON.stringify(NS)||JSON.stringify(ge)!==JSON.stringify(GE)){ P=p; T=t; PM=pm; B=b; NS=ns; GE=ge; draw(); } }catch(e){} },60000);
 })();
