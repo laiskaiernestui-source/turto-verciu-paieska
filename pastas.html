@@ -383,7 +383,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
   async function msToken(interactive){ await msInit();
     if(!msAcc){ if(!interactive) return null; await msal.loginRedirect({scopes:MS.scopes,loginHint:ME}); return new Promise(()=>{}); }
     try{ const r=await msal.acquireTokenSilent({scopes:MS.scopes,account:msAcc}); return r.accessToken; }catch(e){ if(!interactive) return null; await msal.acquireTokenRedirect({scopes:MS.scopes,account:msAcc}); return new Promise(()=>{}); } }
-  async function graph(path,opt={}){ const t=await msToken(true); const r=await fetch(path.startsWith('http')?path:'https://graph.microsoft.com/v1.0'+path,{...opt,headers:{authorization:'Bearer '+t,...(opt.headers||{})}}); if(r.status===204||r.status===202) return null; const ct=r.headers.get('content-type')||''; if(!ct.includes('json')) { if(!r.ok) throw new Error(r.status+' '+(await r.text()).slice(0,200)); return r; } const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error?.message||r.status); return j; }
+  async function graph(path,opt={}){ const t=await msToken(true); const r=await fetch(path.startsWith('http')?path:'https://graph.microsoft.com/v1.0'+path,{...opt,headers:{authorization:'Bearer '+t,...(opt.headers||{})}}); if(r.status===204||r.status===202) return null; const ct=r.headers.get('content-type')||''; if(!ct.includes('json')) { if(!r.ok) throw new Error(r.status+' '+(await r.text()).slice(0,200)); return r; } const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error((j.error?.code?j.error.code+': ':'')+(j.error?.message||r.status)); return j; }
 
   // ---- būsena
   const ST={folder:'inbox',folders:[],msgs:[],next:null,cur:null,q:'',P:[]};
@@ -452,8 +452,11 @@ Outlook: ${esc(m.webLink||'')}</textarea></div></div>`,`<button class="ghost" id
   $('mnew').onclick=()=>compose({mode:'new'}); $('mref').onclick=()=>{ loadFolders(); loadMsgs(); };
   const qi=$('mq'); let qt; qi.oninput=()=>{ clearTimeout(qt); qt=setTimeout(()=>{ ST.q=qi.value; ST.cur=null; drawMsg(); loadMsgs(); },400); };
   $('meta').textContent='';
-  try{ await msInit(); if(!msAcc){ await msToken(true); } $('mwho').textContent=msAcc.username||''; await loadFolders(); await loadMsgs(); drawMsg(); }
-  catch(e){ $('mread').innerHTML=`<div class="note" style="padding:20px;color:var(--bad)">Microsoft prisijungimas nepavyko: ${esc(e.message)}</div>`; }
+  async function start(){ try{ await msInit(); if(!msAcc){ await msToken(true); } $('mwho').textContent=msAcc.username||''; }
+    catch(e){ $('mread').innerHTML=`<div class="note" style="padding:20px;color:var(--bad)">Microsoft prisijungimas nepavyko: ${esc(e.errorMessage||e.message||String(e))}<br><br><button class="ghost" id="mretry">Bandyti dar kartą</button></div>`; $('mretry').onclick=()=>{ msAcc=null; start(); }; return; }
+    try{ await loadFolders(); }catch(e){ $('folders').innerHTML=`<div class="note" style="padding:10px;color:var(--bad)">Aplankų nepavyko įkelti: ${esc(e.message)}</div>`; console.error('folders',e); }
+    try{ await loadMsgs(); }catch(e){ console.error('msgs',e); } drawMsg(); }
+  await start();
   $('mout').onclick=async e=>{ e.preventDefault(); try{ await msal.logoutRedirect({account:msAcc,postLogoutRedirectUri:location.origin+location.pathname}); }catch(err){} };
 })();
 </script></body></html>
