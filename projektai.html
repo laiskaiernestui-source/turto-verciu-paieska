@@ -446,6 +446,7 @@ body.mxview #ptiles,body.mxview #psub{display:none!important}body.mxview .phead{
     $('plist').querySelectorAll('.pitem').forEach(el=>el.onclick=()=>{ cur=el.dataset.id?+el.dataset.id:null; draw(); });
     const ps=$('psel'); if(ps){ ps.innerHTML=`<option value="">Visi projektai</option>`+P.map(p=>`<option value="${p.id}" ${cur===p.id?'selected':''}>${esc(p.pavadinimas)}</option>`).join(''); ps.value=cur==null?'':String(cur); ps.onchange=()=>{ cur=ps.value?+ps.value:null; draw(); }; }
   }
+  new MutationObserver(()=>{ if(view==='gantt'&&$('gt').querySelector('.mxbar')) hoistBar(); }).observe($('gt'),{childList:true});
   function hoistBar(){ document.querySelectorAll('.phead .mxbar').forEach(b=>b.remove()); const bar=$('gt').querySelector('.mxbar'); if(bar){ bar.classList.add('inhead'); const host=$('addtask').parentElement; host.insertBefore(bar,$('addtask')); } }
   function syncVsel(){ const sel=$('vsel'); if(!sel) return; const bs=[...$('vsw').querySelectorAll('button')].filter(b=>b.style.display!=='none'); sel.innerHTML=bs.map(b=>`<option value="${b.dataset.v}">${b.textContent}</option>`).join(''); sel.value=view; }
   function draw(){ document.querySelectorAll('.phead .mxbar').forEach(b=>b.remove());
