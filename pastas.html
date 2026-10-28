@@ -435,8 +435,11 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
   const toast=(t,undo)=>{ document.querySelectorAll('.toast').forEach(x=>x.remove()); const d=document.createElement('div'); d.className='toast'; d.innerHTML=`<span>${esc(t)}</span>${undo?'<button id="tundo">Atšaukti</button>':''}`; document.body.appendChild(d); if(undo) d.querySelector('#tundo').onclick=async()=>{ d.remove(); try{ await undo(); }catch(e){ alert('Nepavyko: '+e.message); } }; setTimeout(()=>d.remove(),6000); };
 
   // ---- aplankai
-  async function loadFolders(){ const j=await graph('/me/mailFolders?$top=100&$select=id,displayName,unreadItemCount,totalItemCount,wellKnownName'); const order=['inbox','drafts','sentitems','archive','deleteditems','junkemail'];
-    ST.folders=(j.value||[]).map(f=>({id:f.id,wk:f.wellKnownName||'',name:WK[f.wellKnownName]||f.displayName,unread:f.unreadItemCount,total:f.totalItemCount})).filter(f=>!['outbox','conversationhistory','syncissues','recoverableitemsdeletions','junkemail'].includes(f.wk)||f.wk==='junkemail').sort((a,b)=>{ const ia=order.indexOf(a.wk), ib=order.indexOf(b.wk); return (ia<0?99:ia)-(ib<0?99:ib)||a.name.localeCompare(b.name,'lt'); }); drawFolders(); }
+  let WKID=null;
+  async function loadFolders(){ const order=['inbox','drafts','sentitems','archive','deleteditems','junkemail'];
+    if(!WKID){ WKID={}; await Promise.all([...order,'outbox','conversationhistory','syncissues'].map(async k=>{ try{ const f=await graph(`/me/mailFolders/${k}?$select=id`); WKID[f.id]=k; }catch(e){} })); }
+    const j=await graph('/me/mailFolders?$top=100&$select=id,displayName,unreadItemCount,totalItemCount');
+    ST.folders=(j.value||[]).map(f=>{ const wk=WKID[f.id]||''; return {id:f.id,wk,name:WK[wk]||f.displayName,unread:f.unreadItemCount,total:f.totalItemCount}; }).filter(f=>!['outbox','conversationhistory','syncissues'].includes(f.wk)).sort((a,b)=>{ const ia=order.indexOf(a.wk), ib=order.indexOf(b.wk); return (ia<0?99:ia)-(ib<0?99:ib)||a.name.localeCompare(b.name,'lt'); }); drawFolders(); }
   const FI={inbox:'📥',drafts:'📝',sentitems:'📤',archive:'🗄️',deleteditems:'🗑️',junkemail:'🚫'};
   function drawFolders(){ $('folders').innerHTML=ST.folders.map(f=>`<button class="fld ${f.id===ST.folder||f.wk===ST.folder?'on':''}" data-id="${f.wk||f.id}"><i>${FI[f.wk]||'📁'}</i><span>${esc(f.name)}</span>${f.unread?`<b>${f.unread}</b>`:''}</button>`).join('');
     const f=ST.folders.find(f=>f.wk===ST.folder||f.id===ST.folder); $('mtitle').textContent=f?f.name:'Paštas';
