@@ -588,7 +588,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
   $('zup').onclick=()=>{ if(!msAcc){ $('zms').click(); return; } const i=$('zup_in'); i.value=''; i.click(); }; $('zup_in').onchange=()=>addPhotos([...$('zup_in').files]);
   $('zpen').onclick=()=>penEntry();
   $('meta').textContent='';
-  try{ Z.P=await api('projektai?select=id,pavadinimas,onedrive,busena&order=busena,pavadinimas'); }catch(e){ toast('Projektų nepavyko įkelti: '+e.message); }
+  try{ Z.P=await api('projektai?select=id,pavadinimas,onedrive,busena&order=busena,pavadinimas'); Z.P.sort((a,b)=>(/realia/i.test(b.pavadinimas)-/realia/i.test(a.pavadinimas))||String(a.busena||'').localeCompare(String(b.busena||''),'lt')||a.pavadinimas.localeCompare(b.pavadinimas,'lt')); }catch(e){ toast('Projektų nepavyko įkelti: '+e.message); }
   if(!Z.pid&&Z.P.length===1) Z.pid=Z.P[0].id;
   draw(); await loadEntries();
   try{ await msInit(); }catch(e){ console.warn(e); } msBtn();
