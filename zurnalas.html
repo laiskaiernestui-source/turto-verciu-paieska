@@ -568,17 +568,18 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
   function penEntry(){ const p=proj(); if(!p) return; const m=modal('Įrašas · '+esc(p.pavadinimas),`<div class="kf"><label>Data</label><input type="date" id="z_d" value="${ymd(new Date())}"></div><div class="kf"><label>Kas įvyko</label><textarea id="z_t" rows="5" placeholder="Pvz.: atvežtas betonas 12 m³, pradėti pamatų darbai, rangovas UAB X…" autofocus></textarea></div>`,`<button class="ghost" id="z_x">Atšaukti</button><button class="primary" id="z_ok" style="width:auto;padding:9px 18px">Įrašyti</button>`);
     m.querySelector('#z_x').onclick=()=>m.remove(); m.querySelector('#z_ok').onclick=async()=>{ const t=m.querySelector('#z_t').value.trim(); if(!t){ m.querySelector('#mmsg').textContent='Įveskite tekstą.'; return; } try{ const j=await api('zurnalas',{method:'POST',headers:{prefer:'return=representation'},body:JSON.stringify({projektas_id:p.id,data:m.querySelector('#z_d').value||ymd(new Date()),tipas:'irasas',tekstas:t,autorius:ME})}); Z.E.unshift(j[0]); Z.E.sort((a,b)=>b.data.localeCompare(a.data)||String(b.sukurta).localeCompare(String(a.sukurta))); m.remove(); draw(); }catch(e){ m.querySelector('#mmsg').textContent='Nepavyko: '+e.message; } }; }
 
+  function msBtn(){ let b=$('zms'); if(!b){ b=document.createElement('button'); b.id='zms'; b.className='zbig'; b.innerHTML='Prisijungti prie Microsoft (OneDrive)'; $('zbtns').after(b); b.onclick=async()=>{ b.disabled=true; b.textContent='Jungiu…'; try{ await msToken(true); }catch(e){ b.disabled=false; b.textContent='Prisijungti prie Microsoft (OneDrive)'; alert(e.message); } }; } b.style.display=msAcc?'none':''; }
   // ---- valdymas
   $('zsel').onchange=()=>{ Z.pid=+$('zsel').value||null; localStorage.setItem('tv_zur_pid',Z.pid||''); loadEntries(); };
   const camIn=$('zcam_in'); if(!isMobile()) camIn.removeAttribute('capture');
-  $('zcam').onclick=()=>{ if(Z.busy) return; camIn.value=''; camIn.click(); }; camIn.onchange=()=>addPhotos([...camIn.files]);
-  $('zup').onclick=()=>{ const i=$('zup_in'); i.value=''; i.click(); }; $('zup_in').onchange=()=>addPhotos([...$('zup_in').files]);
+  $('zcam').onclick=()=>{ if(Z.busy) return; if(!msAcc){ $('zms').click(); return; } camIn.value=''; camIn.click(); }; camIn.onchange=()=>addPhotos([...camIn.files]);
+  $('zup').onclick=()=>{ if(!msAcc){ $('zms').click(); return; } const i=$('zup_in'); i.value=''; i.click(); }; $('zup_in').onchange=()=>addPhotos([...$('zup_in').files]);
   $('zpen').onclick=penEntry;
   $('meta').textContent='';
   try{ Z.P=await api('projektai?select=id,pavadinimas,onedrive,busena&order=busena,pavadinimas'); }catch(e){ toast('Projektų nepavyko įkelti: '+e.message); }
   if(!Z.pid&&Z.P.length===1) Z.pid=Z.P[0].id;
   draw(); await loadEntries();
-  try{ await msInit(); if(!msAcc&&Z.pid&&!sessionStorage.getItem('tv_zur_tried')){ sessionStorage.setItem('tv_zur_tried','1'); msToken(true); } }catch(e){ console.warn(e); }
+  try{ await msInit(); }catch(e){ console.warn(e); } msBtn();
 
 })();
 </script><script id="appsw">(function(){ const H=document.querySelector('header'); if(!H) return; const cur=location.pathname.split('/').pop()||'index.html'; const apps=[['pastas.html','✉','Paštas'],['projektai.html','▦','Projektų valdymas'],['kalendorius.html','▣','Kalendorius'],['zurnalas.html','▤','Žurnalas'],['index.html','◎','Analitikos įrankis']];
