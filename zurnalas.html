@@ -514,7 +514,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
     msal=new window.msal.PublicClientApplication({auth:{clientId:MS.clientId,authority:'https://login.microsoftonline.com/'+MS.tenant,redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});
     await msal.initialize(); try{ const r=await msal.handleRedirectPromise(); if(r&&r.account) msAcc=r.account; }catch(e){ console.warn('MSAL',e); } if(!msAcc) msAcc=msal.getAllAccounts()[0]||null; return msal; }
   async function msToken(interactive){ await msInit();
-    if(!msAcc){ if(!interactive) return null; sessionStorage.setItem('tv_zur_after',JSON.stringify({p:Z.pid})); await msal.loginRedirect({scopes:MS.scopes,loginHint:ME}); return new Promise(()=>{}); }
+    if(!msAcc){ if(!interactive) return null; const last=+sessionStorage.getItem('tv_zur_redir')||0; if(Date.now()-last<20000) throw new Error('Microsoft prisijungimas nepavyko – bandykite dar kartą.'); sessionStorage.setItem('tv_zur_redir',String(Date.now())); sessionStorage.setItem('tv_zur_after',JSON.stringify({p:Z.pid})); await msal.loginRedirect({scopes:MS.scopes,loginHint:ME}); return new Promise(()=>{}); }
     try{ const r=await msal.acquireTokenSilent({scopes:MS.scopes,account:msAcc}); return r.accessToken; }catch(e){ if(!interactive) return null; await msal.acquireTokenRedirect({scopes:MS.scopes,account:msAcc}); return new Promise(()=>{}); } }
   async function graph(path,opt={}){ const t=await msToken(true); const r=await fetch(path.startsWith('http')?path:'https://graph.microsoft.com/v1.0'+path,{...opt,headers:{authorization:'Bearer '+t,...(opt.headers||{})}}); if(r.status===204||r.status===202) return null; const ct=r.headers.get('content-type')||''; if(!ct.includes('json')){ if(!r.ok) throw new Error(r.status+' '+(await r.text()).slice(0,200)); return r; } const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error((j.error?.code?j.error.code+': ':'')+(j.error?.message||r.status)); return j; }
   const api=async(path,opt={})=>{ const r=await fetch(SB+'/rest/v1/'+path,{...opt,headers:await H(opt.headers||{})}); if(!r.ok) throw new Error((await r.text()).slice(0,200)); const t=await r.text(); return t?JSON.parse(t):null; };
@@ -578,7 +578,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
   try{ Z.P=await api('projektai?select=id,pavadinimas,onedrive,busena&order=busena,pavadinimas'); }catch(e){ toast('Projektų nepavyko įkelti: '+e.message); }
   if(!Z.pid&&Z.P.length===1) Z.pid=Z.P[0].id;
   draw(); await loadEntries();
-  try{ await msInit(); if(!msAcc&&Z.pid){ msToken(true); } }catch(e){ console.warn(e); }
+  try{ await msInit(); if(!msAcc&&Z.pid&&!sessionStorage.getItem('tv_zur_tried')){ sessionStorage.setItem('tv_zur_tried','1'); msToken(true); } }catch(e){ console.warn(e); }
 
 })();
 </script><script id="appsw">(function(){ const H=document.querySelector('header'); if(!H) return; const cur=location.pathname.split('/').pop()||'index.html'; const apps=[['pastas.html','✉','Paštas'],['projektai.html','▦','Projektų valdymas'],['kalendorius.html','▣','Kalendorius'],['zurnalas.html','▤','Žurnalas'],['index.html','◎','Analitikos įrankis']];
