@@ -441,6 +441,7 @@ body.mxview #ptiles,body.mxview #psub{display:none!important}body.mxview .phead{
   async function load(){ [P,T,N,M,PM,B,NS,GE]=await Promise.all([api('projektai?select=*&order=busena,pavadinimas'),api('uzduotys?select=*&order=eile,id'),api('rpc/nariai',{method:'POST',body:'{}'}),api('matrica_sablonas?select=*&order=eil'),api('projekto_matrica?select=*'),api('biudzetas?select=*&order=faze,pozicija'),api('notion_saltiniai?select=*'),api('gantt_elementai?select=*&order=eile,id')]); P.sort((a,b)=>(/realia/i.test(b.pavadinimas)-/realia/i.test(a.pavadinimas))||String(a.busena||'').localeCompare(String(b.busena||''),'lt')||a.pavadinimas.localeCompare(b.pavadinimas,'lt')); $('meta').textContent=''; }
   try{ await load(); tvPush.init(); if(isAdmin()){ (async()=>{ const pend=T.filter(t=>!t.notion_id).slice(0,60); for(const t of pend){ await notionCreate(t); await new Promise(r=>setTimeout(r,400)); } })(); } tvPush.badge({task:T.filter(t=>(t.atsakingas||'').toLowerCase()===ME&&t.busena==='Nauja').length}); }catch(e){ $('meta').textContent='Nepavyko užkrauti: '+e.message; return; }
   try{ const af=JSON.parse(sessionStorage.getItem('tv_after')||'null'); if(af){ sessionStorage.removeItem('tv_after'); if(af.cur&&P.some(x=>x.id===af.cur)) cur=af.cur; if(af.view) view=af.view; } }catch(e){}
+  const DL={}; try{ const sp=new URLSearchParams(location.search); if(sp.get('p')&&P.some(x=>x.id===+sp.get('p'))) cur=+sp.get('p'); if(sp.get('view')) view=sp.get('view'); const hm=location.hash.match(/^#t(\d+)$/); DL.t=+(sp.get('t')||(hm?hm[1]:0))||0; if(sp.get('p')||sp.get('t')) history.replaceState(null,'',location.pathname+(location.hash||'')); }catch(e){}
   const name=e=>{ if(!e) return '–'; const l=String(e).split('@')[0]; return l.charAt(0).toUpperCase()+l.slice(1); };
   const ini=e=>e?String(e).split('@')[0].slice(0,2).toUpperCase():'?';
   const COLS=[['Nauja','Nauja'],['Vykdoma','Vykdoma'],['Laukia','Laukia'],['Atlikta','Atlikta']];
@@ -909,7 +910,7 @@ body.mxview #ptiles,body.mxview #psub{display:none!important}body.mxview .phead{
     m.querySelector('#ms').onclick=async()=>{ const row=readProj(m,p); try{ const j=await api('projektai?id=eq.'+p.id,{method:'PATCH',headers:{prefer:'return=representation'},body:JSON.stringify(row)}); Object.assign(p,j[0]); m.remove(); draw(); }catch(e){ m.querySelector('#mmsg').textContent='Nepavyko: '+e.message; } }; };
   { const v=localStorage.getItem('tv_f_mano'); $('f_mano').checked=v==null?true:v==='1'; } $('f_mano').addEventListener('change',()=>localStorage.setItem('tv_f_mano',$('f_mano').checked?'1':'0'));
   ['f_mano','f_atl','f_kas'].forEach(id=>$(id).addEventListener('change',draw)); document.addEventListener('click',e=>{ const fp=$('fpop'); if(fp&&fp.style.display!=='none'&&!e.target.closest('#fpop,#pfilt')) fp.style.display='none'; });
-  draw();
+  draw(); if(DL.t&&T.some(x=>x.id===DL.t)){ setTimeout(()=>openTask(DL.t),50); }
   // Microsoft (OneDrive) prisijungimas kartu su platforma: tyliai per SSO, o jei nepavyksta – vienas peradresavimas (kartą per sesiją)
   (async()=>{ if(!msReady()||!ME) return; try{ await msInit(); if(msAcc) return; const tried=sessionStorage.getItem('tv_ms_tried'); 
       try{ const r=await msal.ssoSilent({scopes:MS.scopes,loginHint:ME}); msAcc=r.account; if(view==='files') draw(); return; }catch(e){ console.info('MS SSO silent nepavyko:',e.errorCode||e.message); }
@@ -930,6 +931,7 @@ body.mxview #ptiles,body.mxview #psub{display:none!important}body.mxview .phead{
  const applyShow=sh=>{ const map={pastas:'pastas.html',projektai:'projektai.html',kalendorius:'kalendorius.html',zurnalas:'zurnalas.html',index:'index.html'}; for(const [k,f] of Object.entries(map)){ if(sh[k]===false){ document.querySelectorAll('nav.apps a, #appmenu a').forEach(a=>{ const h=(a.getAttribute('href')||'').replace(/^\.\//,'').replace(/^\.$|^$/,'index.html'); if(h===f||(f==='index.html'&&(h==='./'||h==='index.html'))) a.style.display='none'; }); } } };
  try{ applyShow(JSON.parse(localStorage.getItem('tv_show')||'{}')); }catch(e){}
  try{ const A=JSON.parse(localStorage.getItem('tv_auth')||'null'); if(A&&A.access_token&&A.email){ fetch('https://zbgugliqnjohqbotssgl.supabase.co/rest/v1/naudotojo_nustatymai?select=rodymas&email=eq.'+encodeURIComponent(A.email),{headers:{apikey:'sb_publishable_PpoYli-Lf-OiTJkJVTP15A_fzR58I3D',authorization:'Bearer '+A.access_token}}).then(r=>r.ok?r.json():null).then(j=>{ if(j&&j[0]){ localStorage.setItem('tv_show',JSON.stringify(j[0].rodymas||{})); applyShow(j[0].rodymas||{}); } }).catch(()=>{}); } }catch(e){}
+ if(navigator.serviceWorker){ navigator.serviceWorker.addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='open'&&d.url){ location.href=d.url; } }); }
  if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();</script>
 </body></html>

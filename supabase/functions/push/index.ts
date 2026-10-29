@@ -46,11 +46,14 @@ Deno.serve(async (req) => {
     try { b = await req.json(); } catch { return new Response("", { status: 202 }); }
     const seen = new Set<string>();
     for (const v of b.value || []) {
-      if (!v.subscriptionId || seen.has(v.subscriptionId)) continue;
-      seen.add(v.subscriptionId);
+      if (!v.subscriptionId) continue;
+      // resource: Users('..')/Messages('<id>') → nuoroda į konkretų laišką
+      const mid = String(v.resource || "").match(/Messages\('([^']+)'\)/i)?.[1] || (v.resourceData && v.resourceData.id) || "";
+      const key = v.subscriptionId + "|" + mid; if (seen.has(key)) continue; seen.add(key);
       const { data: s } = await sb.from("graph_subs").select("email").eq("id", v.subscriptionId).maybeSingle();
       if (!s || s.email !== v.clientState) continue;
-      await sendTo(s.email, { kind: "mail", title: "Naujas laiškas", body: "Realia paštas – atidaryti", url: "/pastas.html", tag: "mail-" + Date.now() });
+      const url = mid ? "/pastas.html?msg=" + encodeURIComponent(mid) : "/pastas.html";
+      await sendTo(s.email, { kind: "mail", title: "Naujas laiškas", body: "Realia paštas – atidaryti", url, tag: "mail-" + (mid || Date.now()) });
     }
     return new Response("", { status: 202 });
   }

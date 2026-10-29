@@ -20,4 +20,4 @@ self.addEventListener('push',e=>{ let p={}; try{ p=e.data?e.data.json():{}; }cat
   })()); });
 
 self.addEventListener('notificationclick',e=>{ e.notification.close(); const url=new URL((e.notification.data&&e.notification.data.url)||'/',self.location.origin).href;
-  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{ for(const c of cs){ if(c.url.split('?')[0]===url.split('?')[0]&&'focus' in c){ c.navigate&&c.navigate(url); return c.focus(); } } return self.clients.openWindow(url); })); });
+  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async cs=>{ const c=cs.find(x=>'focus' in x); if(c){ try{ await c.focus(); }catch(err){} c.postMessage({type:'open',url}); return; } return self.clients.openWindow(url); })); });

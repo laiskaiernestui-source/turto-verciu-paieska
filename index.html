@@ -656,6 +656,7 @@ b.onclick=()=>{localStorage.setItem('tv_side',localStorage.getItem('tv_side')===
  const applyShow=sh=>{ const map={pastas:'pastas.html',projektai:'projektai.html',kalendorius:'kalendorius.html',zurnalas:'zurnalas.html',index:'index.html'}; for(const [k,f] of Object.entries(map)){ if(sh[k]===false){ document.querySelectorAll('nav.apps a, #appmenu a').forEach(a=>{ const h=(a.getAttribute('href')||'').replace(/^\.\//,'').replace(/^\.$|^$/,'index.html'); if(h===f||(f==='index.html'&&(h==='./'||h==='index.html'))) a.style.display='none'; }); } } };
  try{ applyShow(JSON.parse(localStorage.getItem('tv_show')||'{}')); }catch(e){}
  try{ const A=JSON.parse(localStorage.getItem('tv_auth')||'null'); if(A&&A.access_token&&A.email){ fetch('https://zbgugliqnjohqbotssgl.supabase.co/rest/v1/naudotojo_nustatymai?select=rodymas&email=eq.'+encodeURIComponent(A.email),{headers:{apikey:'sb_publishable_PpoYli-Lf-OiTJkJVTP15A_fzR58I3D',authorization:'Bearer '+A.access_token}}).then(r=>r.ok?r.json():null).then(j=>{ if(j&&j[0]){ localStorage.setItem('tv_show',JSON.stringify(j[0].rodymas||{})); applyShow(j[0].rodymas||{}); } }).catch(()=>{}); } }catch(e){}
+ if(navigator.serviceWorker){ navigator.serviceWorker.addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='open'&&d.url){ location.href=d.url; } }); }
  if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();</script>
 </body></html>
