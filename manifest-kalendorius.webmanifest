@@ -1,0 +1,16 @@
+{
+  "id": "realia-kalendorius",
+  "name": "Realia Kalendorius",
+  "short_name": "Kalendorius",
+  "start_url": "./kalendorius.html?app=kal",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#E7E7E7",
+  "theme_color": "#1E1E1E",
+  "lang": "lt",
+  "icons": [
+    {"src": "icon-kal-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-kal-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-kal-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
