@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
   }
 
   if (kind === "mail") {
+    if (Math.random() < 0.05) await sb.from("push_dedupe").delete().lt("at", new Date(Date.now() - 3 * 86400e3).toISOString());
     let b: any = {};
     try { b = await req.json(); } catch { return new Response("", { status: 202 }); }
     const seen = new Set<string>();
@@ -52,6 +53,11 @@ Deno.serve(async (req) => {
       const key = v.subscriptionId + "|" + mid; if (seen.has(key)) continue; seen.add(key);
       const { data: s } = await sb.from("graph_subs").select("email").eq("id", v.subscriptionId).maybeSingle();
       if (!s || s.email !== v.clientState) continue;
+      // vienas pranešimas vienam laiškui (kelios Graph prenumeratos / pakartotiniai pranešimai)
+      if (mid) {
+        const { error: de } = await sb.from("push_dedupe").insert({ k: s.email + "|" + mid });
+        if (de) continue; // jau siųsta
+      }
       const url = mid ? "/pastas.html?msg=" + encodeURIComponent(mid) : "/pastas.html";
       await sendTo(s.email, { kind: "mail", title: "Naujas laiškas", body: "Realia paštas – atidaryti", url, tag: "mail-" + (mid || Date.now()) });
     }
