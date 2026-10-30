@@ -568,7 +568,7 @@ body.flview .tablewrap{max-height:calc(100vh - 230px);overflow:auto}
 
   // ---- įkėlimas ir piešimas
   async function load(){ const {s,e}=range(); K.loading=true; K.err=null; K.gerr=null; if(!cachePaint()){ K.ev=[]; draw(); } drawTop();
-    if(!K.P.length){ try{ K.P=await api('projektai?select=id,pavadinimas'); }catch(err){} } if(!K.N.length){ try{ K.N=await api('rpc/nariai',{method:'POST',body:'{}'}); }catch(err){} }
+    if(!K.P.length){ try{ K.P=await api('projektai?select=id,pavadinimas,eile'); K.P.sort((a,b)=>((a.eile==null)-(b.eile==null))||((a.eile??0)-(b.eile??0))||(/realia/i.test(b.pavadinimas)-/realia/i.test(a.pavadinimas))||a.pavadinimas.localeCompare(b.pavadinimas,'lt')); }catch(err){} } if(!K.N.length){ try{ K.N=await api('rpc/nariai',{method:'POST',body:'{}'}); }catch(err){} }
     if(K.cfg===null){ try{ const r=await api('kalendoriai?select=*&email=eq.'+encodeURIComponent(ME)); K.cfg=r[0]||{}; }catch(err){ K.cfg={}; } }
     const parts=await Promise.all([loadOutlook(s,e),loadTasks(s,e),loadGantt(s,e),loadGoogle(s,e),loadBusy(s,e)]);
     K.ev=parts.flat().sort((a,b)=>a.s-b.s); K.loading=false; draw(); cacheSave(); }
